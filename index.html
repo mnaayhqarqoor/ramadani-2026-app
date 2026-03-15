@@ -3,169 +3,144 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>بوابة رمضان 2026</title>
+    <title>بوابة رمضان 2026 - لوحة التحكم</title>
     <style>
-        :root {
-            --primary: #38bdf8;
-            --secondary: #fbbf24;
-            --bg: #020617;
-            --glass: rgba(255, 255, 255, 0.03);
-            --border: rgba(255, 255, 255, 0.1);
-        }
-
-        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-
-        body {
-            background-color: var(--bg);
-            background-image: 
-                radial-gradient(circle at 0% 0%, rgba(56, 189, 248, 0.08) 0%, transparent 50%),
-                radial-gradient(circle at 100% 100%, rgba(129, 140, 248, 0.08) 0%, transparent 50%);
-            color: white;
-            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-            line-height: 1.6;
-            padding: 15px;
-        }
-
+        :root { --primary: #38bdf8; --bg: #020617; --glass: rgba(255, 255, 255, 0.03); --border: rgba(255, 255, 255, 0.1); }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background-color: var(--bg); color: white; font-family: 'Segoe UI', sans-serif; padding: 20px; }
+        
+        /* تصميم الواجهة */
         .container { max-width: 1200px; margin: 0 auto; }
+        header { text-align: center; padding: 30px 0; border-bottom: 1px solid var(--border); margin-bottom: 30px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
+        .card { background: var(--glass); border: 1px solid var(--border); border-radius: 20px; overflow: hidden; transition: 0.3s; }
+        .card img { width: 100%; height: 160px; object-fit: cover; }
+        .card-content { padding: 15px; }
+        .btn-watch { display: block; background: var(--primary); color: #000; text-align: center; padding: 10px; border-radius: 10px; text-decoration: none; font-weight: bold; }
 
-        header { text-align: center; padding: 40px 0 20px; }
-        header h1 { font-size: clamp(2rem, 5vw, 3rem); color: var(--primary); margin-bottom: 10px; }
-        header p { color: #94a3b8; font-size: 1.1rem; }
-
-        /* التصنيف */
-        .tabs {
-            display: flex; justify-content: center; gap: 10px; margin-bottom: 30px;
-        }
-        .tab-btn {
-            background: var(--glass); border: 1px solid var(--border);
-            color: white; padding: 10px 20px; border-radius: 50px; cursor: pointer;
-            transition: 0.3s; font-weight: bold;
-        }
-        .tab-btn.active { background: var(--primary); color: var(--bg); border-color: var(--primary); }
-
-        /* شبكة المحتوى */
-        .grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 20px;
-        }
-
-        @media (max-width: 600px) {
-            .grid { grid-template-columns: 1fr; }
-        }
-
-        .card {
-            background: var(--glass);
-            backdrop-filter: blur(10px);
-            border: 1px solid var(--border);
-            border-radius: 20px;
-            overflow: hidden;
-            transition: 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            position: relative;
-        }
-
-        .card:hover { transform: translateY(-8px); border-color: var(--primary); }
-
-        .card-img {
-            width: 100%; height: 180px; object-fit: cover;
-            border-bottom: 1px solid var(--border);
-        }
-
-        .card-body { padding: 20px; }
-        .card-title { font-size: 1.2rem; margin-bottom: 15px; }
-
-        .card-actions { display: flex; gap: 10px; }
-
-        .btn-watch {
-            flex: 1; background: var(--primary); color: var(--bg);
-            text-decoration: none; text-align: center; padding: 10px;
-            border-radius: 12px; font-weight: bold; transition: 0.3s;
-        }
-
-        .btn-fav {
-            background: var(--glass); border: 1px solid var(--border);
-            color: white; width: 45px; height: 45px; border-radius: 12px;
-            cursor: pointer; display: flex; align-items: center; justify-content: center;
-            font-size: 1.2rem; transition: 0.3s;
-        }
-
-        .btn-fav.active { color: #ef4444; border-color: #ef4444; }
-
-        .loading-text { text-align: center; grid-column: 1/-1; padding: 50px; color: #64748b; }
+        /* لوحة التحكم (Admin Panel) */
+        #adminPanel { display: none; background: #111827; border: 2px solid var(--primary); border-radius: 20px; padding: 25px; margin-bottom: 40px; position: relative; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; color: var(--primary); }
+        input, textarea { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid var(--border); background: #000; color: white; }
+        .admin-btns { display: flex; gap: 10px; margin-top: 20px; }
+        .btn-add { background: #22c55e; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; }
+        .btn-copy { background: #6366f1; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; }
+        
+        .admin-trigger { position: fixed; bottom: 20px; left: 20px; background: var(--glass); padding: 10px; border-radius: 50%; cursor: pointer; border: 1px solid var(--border); z-index: 1000; }
+        #jsonOutput { height: 150px; margin-top: 15px; font-family: monospace; font-size: 12px; }
     </style>
 </head>
 <body>
 
-    <div class="container">
-        <header>
-            <h1>🌙 بوابة رمضان 2026</h1>
-            <p>شاهد مسلسلاتك المفضلة بأعلى جودة</p>
-        </header>
+<div class="container">
+    <header>
+        <h1>🌙 بوابة رمضان 2026</h1>
+        <p>تصميم خرافي للحاسوب والهاتف</p>
+    </header>
 
-        <div class="tabs">
-            <button class="tab-btn active" onclick="render('all')">الكل</button>
-            <button class="tab-btn" onclick="render('fav')">❤️ المفضلة</button>
+    <div id="adminPanel">
+        <h2>🛠 لوحة الإدارة</h2>
+        <div class="form-group">
+            <label>اسم المسلسل والحلقة</label>
+            <input type="text" id="nameInput" placeholder="مثال: شباب البومب - حلقة 1">
         </div>
-
-        <div id="mainGrid" class="grid">
-            <div class="loading-text">جاري جلب المحتوى...</div>
+        <div class="form-group">
+            <label>رابط الصورة (البوستر)</label>
+            <input type="text" id="imgInput" placeholder="https://example.com/photo.jpg">
         </div>
+        <div class="form-group">
+            <label>رابط المشاهدة</label>
+            <input type="text" id="urlInput" placeholder="https://example.com/video">
+        </div>
+        <div class="admin-btns">
+            <button class="btn-add" onclick="addItem()">إضافة للقائمة ➕</button>
+            <button class="btn-copy" onclick="copyJSON()">نسخ كود JSON 📋</button>
+        </div>
+        <textarea id="jsonOutput" readonly placeholder="كود الـ JSON سيظهر هنا بعد الإضافة..."></textarea>
+        <p style="font-size: 12px; color: #94a3b8; margin-top: 10px;">* بعد النسخ، اذهب لملف data.json في GitHub واستبدل محتواه بهذا الكود.</p>
     </div>
 
-    <script>
-        let allEpisodes = [];
-        let favorites = JSON.parse(localStorage.getItem('ramadanFavs')) || [];
+    <div id="mainGrid" class="grid">
+        </div>
+</div>
 
-        async function loadData() {
-            try {
-                const res = await fetch('data.json?v=' + Math.random());
-                allEpisodes = await res.json();
-                render('all');
-            } catch (e) {
-                document.getElementById('mainGrid').innerHTML = '<div class="loading-text">تأكد من وجود ملف data.json</div>';
-            }
+<div class="admin-trigger" onclick="toggleAdmin()">⚙️</div>
+
+<script>
+    let episodes = [];
+
+    // جلب البيانات الأصلية
+    async function loadData() {
+        try {
+            const res = await fetch('data.json?v=' + Math.random());
+            episodes = await res.json();
+            render();
+            updateJSON();
+        } catch (e) {
+            console.log("تأكد من إنشاء ملف data.json");
         }
+    }
 
-        function toggleFavorite(id) {
-            if (favorites.includes(id)) {
-                favorites = favorites.filter(fid => fid !== id);
-            } else {
-                favorites.push(id);
-            }
-            localStorage.setItem('ramadanFavs', JSON.stringify(favorites));
-            render(document.querySelector('.tab-btn.active').innerText.includes('المفضلة') ? 'fav' : 'all');
-        }
-
-        function render(mode) {
-            const grid = document.getElementById('mainGrid');
-            const data = mode === 'fav' ? allEpisodes.filter(e => favorites.includes(e.id)) : allEpisodes;
-            
-            // تحديث الأزرار
-            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-            event?.target.classList.add('active');
-
-            if (data.length === 0) {
-                grid.innerHTML = `<div class="loading-text">${mode === 'fav' ? 'قائمة المفضلة فارغة' : 'لا توجد مسلسلات حالياً'}</div>`;
-                return;
-            }
-
-            grid.innerHTML = data.map(ep => `
-                <div class="card">
-                    <img src="${ep.image || 'https://via.placeholder.com/400x200/0f172a/38bdf8?text=Ramadan+2026'}" class="card-img" alt="${ep.name}">
-                    <div class="card-body">
-                        <h3 class="card-title">${ep.name}</h3>
-                        <div class="card-actions">
-                            <a href="${ep.url}" target="_blank" class="btn-watch">مشاهدة الآن</a>
-                            <button onclick="toggleFavorite('${ep.id}')" class="btn-fav ${favorites.includes(ep.id) ? 'active' : ''}">
-                                ${favorites.includes(ep.id) ? '❤️' : '🤍'}
-                            </button>
-                        </div>
-                    </div>
+    function render() {
+        const grid = document.getElementById('mainGrid');
+        grid.innerHTML = episodes.map((ep, index) => `
+            <div class="card">
+                <img src="${ep.image || 'https://via.placeholder.com/400x200/0f172a/38bdf8?text=Ramadan'}" alt="Poster">
+                <div class="card-content">
+                    <h3 style="margin-bottom:15px">${ep.name}</h3>
+                    <a href="${ep.url}" target="_blank" class="btn-watch">مشاهدة الآن</a>
+                    <button onclick="deleteItem(${index})" style="background:none; border:none; color:#ef4444; cursor:pointer; margin-top:10px; font-size:12px; display:block">حذف من القائمة</button>
                 </div>
-            `).join('');
-        }
+            </div>
+        `).join('');
+    }
 
-        loadData();
-    </script>
+    function addItem() {
+        const name = document.getElementById('nameInput').value;
+        const image = document.getElementById('imgInput').value;
+        const url = document.getElementById('urlInput').value;
+
+        if(name && url) {
+            episodes.push({ name, image, url });
+            render();
+            updateJSON();
+            // مسح الخانات
+            document.getElementById('nameInput').value = '';
+            document.getElementById('imgInput').value = '';
+            document.getElementById('urlInput').value = '';
+        }
+    }
+
+    function deleteItem(index) {
+        if(confirm("هل تريد حذف هذا المسلسل؟")) {
+            episodes.splice(index, 1);
+            render();
+            updateJSON();
+        }
+    }
+
+    function updateJSON() {
+        document.getElementById('jsonOutput').value = JSON.stringify(episodes, null, 2);
+    }
+
+    function copyJSON() {
+        const copyText = document.getElementById("jsonOutput");
+        copyText.select();
+        document.execCommand("copy");
+        alert("تم نسخ الكود! الآن ضعه في ملف data.json في GitHub.");
+    }
+
+    function toggleAdmin() {
+        const pass = prompt("أدخل كلمة السر:");
+        if(pass === "0000") {
+            const panel = document.getElementById('adminPanel');
+            panel.style.display = (panel.style.display === 'block') ? 'none' : 'block';
+        }
+    }
+
+    loadData();
+</script>
+
 </body>
 </html>
