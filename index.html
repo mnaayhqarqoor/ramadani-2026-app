@@ -3,144 +3,223 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>بوابة رمضان 2026 - لوحة التحكم</title>
+    <title>SafeChat Pro | المحادثة الآمنة</title>
     <style>
-        :root { --primary: #38bdf8; --bg: #020617; --glass: rgba(255, 255, 255, 0.03); --border: rgba(255, 255, 255, 0.1); }
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { background-color: var(--bg); color: white; font-family: 'Segoe UI', sans-serif; padding: 20px; }
-        
-        /* تصميم الواجهة */
-        .container { max-width: 1200px; margin: 0 auto; }
-        header { text-align: center; padding: 30px 0; border-bottom: 1px solid var(--border); margin-bottom: 30px; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
-        .card { background: var(--glass); border: 1px solid var(--border); border-radius: 20px; overflow: hidden; transition: 0.3s; }
-        .card img { width: 100%; height: 160px; object-fit: cover; }
-        .card-content { padding: 15px; }
-        .btn-watch { display: block; background: var(--primary); color: #000; text-align: center; padding: 10px; border-radius: 10px; text-decoration: none; font-weight: bold; }
+        /* إعدادات الألوان والخلفية */
+        :root {
+            --glass-bg: rgba(255, 255, 255, 0.15);
+            --glass-border: rgba(255, 255, 255, 0.2);
+            --accent-color: #00f2fe;
+            --admin-glow: #ff416c;
+            --text-color: #ffffff;
+        }
 
-        /* لوحة التحكم (Admin Panel) */
-        #adminPanel { display: none; background: #111827; border: 2px solid var(--primary); border-radius: 20px; padding: 25px; margin-bottom: 40px; position: relative; }
-        .form-group { margin-bottom: 15px; }
-        label { display: block; margin-bottom: 5px; color: var(--primary); }
-        input, textarea { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid var(--border); background: #000; color: white; }
-        .admin-btns { display: flex; gap: 10px; margin-top: 20px; }
-        .btn-add { background: #22c55e; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; }
-        .btn-copy { background: #6366f1; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; }
-        
-        .admin-trigger { position: fixed; bottom: 20px; left: 20px; background: var(--glass); padding: 10px; border-radius: 50%; cursor: pointer; border: 1px solid var(--border); z-index: 1000; }
-        #jsonOutput { height: 150px; margin-top: 15px; font-family: monospace; font-size: 12px; }
+        body {
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+            background-attachment: fixed;
+            overflow: hidden;
+        }
+
+        /* تأثير الزجاج (Glassmorphism) */
+        .glass-panel {
+            background: var(--glass-bg);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+
+        /* شاشة الدخول */
+        #login-screen {
+            width: 350px;
+            padding: 40px;
+            text-align: center;
+            color: white;
+            transition: 0.5s;
+        }
+
+        #login-screen h2 { margin-bottom: 25px; font-weight: 300; letter-spacing: 2px; }
+
+        input {
+            width: 100%;
+            padding: 12px 15px;
+            margin: 10px 0;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid var(--glass-border);
+            border-radius: 10px;
+            color: white;
+            outline: none;
+            transition: 0.3s;
+        }
+
+        input:focus { border-color: var(--accent-color); background: rgba(255, 255, 255, 0.2); }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            margin-top: 15px;
+            background: linear-gradient(to right, #4facfe 0%, #00f2fe 100%);
+            border: none;
+            border-radius: 10px;
+            color: #000;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        button:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0, 242, 254, 0.4); }
+
+        /* واجهة المحادثة - للحاسوب والهاتف */
+        #chat-screen {
+            display: none;
+            width: 95%;
+            max-width: 900px;
+            height: 85vh;
+            flex-direction: column;
+        }
+
+        #chat-header {
+            padding: 15px 25px;
+            border-bottom: 1px solid var(--glass-border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: white;
+        }
+
+        #messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        /* فقاعات الرسائل */
+        .message {
+            max-width: 70%;
+            padding: 12px 18px;
+            border-radius: 15px;
+            font-size: 0.95rem;
+            line-height: 1.4;
+            color: white;
+            position: relative;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .user-msg {
+            align-self: flex-start;
+            background: rgba(255, 255, 255, 0.1);
+            border-bottom-right-radius: 2px;
+        }
+
+        .admin-msg {
+            align-self: flex-end;
+            background: linear-gradient(45deg, #ff416c, #ff4b2b);
+            border-bottom-left-radius: 2px;
+            box-shadow: 0 4px 15px rgba(255, 65, 108, 0.3);
+        }
+
+        .meta { font-size: 0.7rem; opacity: 0.7; margin-bottom: 4px; display: block; }
+
+        /* منطقة الإدخال */
+        .input-bar {
+            padding: 20px;
+            display: flex;
+            gap: 10px;
+            border-top: 1px solid var(--glass-border);
+        }
+
+        #msg-input { margin: 0; }
+
+        /* تخصيص السكرول بار */
+        #messages::-webkit-scrollbar { width: 5px; }
+        #messages::-webkit-scrollbar-thumb { background: var(--glass-border); border-radius: 10px; }
+
+        /* استجابة للهواتف */
+        @media (max-width: 600px) {
+            #chat-screen { height: 100vh; width: 100%; border-radius: 0; border: none; }
+            .message { max-width: 85%; }
+        }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <header>
-        <h1>🌙 بوابة رمضان 2026</h1>
-        <p>تصميم خرافي للحاسوب والهاتف</p>
-    </header>
-
-    <div id="adminPanel">
-        <h2>🛠 لوحة الإدارة</h2>
-        <div class="form-group">
-            <label>اسم المسلسل والحلقة</label>
-            <input type="text" id="nameInput" placeholder="مثال: شباب البومب - حلقة 1">
-        </div>
-        <div class="form-group">
-            <label>رابط الصورة (البوستر)</label>
-            <input type="text" id="imgInput" placeholder="https://example.com/photo.jpg">
-        </div>
-        <div class="form-group">
-            <label>رابط المشاهدة</label>
-            <input type="text" id="urlInput" placeholder="https://example.com/video">
-        </div>
-        <div class="admin-btns">
-            <button class="btn-add" onclick="addItem()">إضافة للقائمة ➕</button>
-            <button class="btn-copy" onclick="copyJSON()">نسخ كود JSON 📋</button>
-        </div>
-        <textarea id="jsonOutput" readonly placeholder="كود الـ JSON سيظهر هنا بعد الإضافة..."></textarea>
-        <p style="font-size: 12px; color: #94a3b8; margin-top: 10px;">* بعد النسخ، اذهب لملف data.json في GitHub واستبدل محتواه بهذا الكود.</p>
+    <div id="login-screen" class="glass-panel">
+        <h2>SafeChat</h2>
+        <p style="font-size: 0.8rem; opacity: 0.8;">أدخل بياناتك للبدء</p>
+        <input type="text" id="username" placeholder="الاسم المستعار (أو Admin للتميز)">
+        <input type="password" id="secret-code" placeholder="رمز الدخول">
+        <button onclick="login()">دخول آمن</button>
     </div>
 
-    <div id="mainGrid" class="grid">
+    <div id="chat-screen" class="glass-panel">
+        <div id="chat-header">
+            <span id="display-name" style="font-weight: bold;">المحادثة الجماعية</span>
+            <span style="font-size: 0.8rem; color: var(--accent-color);">● متصل الآن</span>
         </div>
-</div>
-
-<div class="admin-trigger" onclick="toggleAdmin()">⚙️</div>
-
-<script>
-    let episodes = [];
-
-    // جلب البيانات الأصلية
-    async function loadData() {
-        try {
-            const res = await fetch('data.json?v=' + Math.random());
-            episodes = await res.json();
-            render();
-            updateJSON();
-        } catch (e) {
-            console.log("تأكد من إنشاء ملف data.json");
-        }
-    }
-
-    function render() {
-        const grid = document.getElementById('mainGrid');
-        grid.innerHTML = episodes.map((ep, index) => `
-            <div class="card">
-                <img src="${ep.image || 'https://via.placeholder.com/400x200/0f172a/38bdf8?text=Ramadan'}" alt="Poster">
-                <div class="card-content">
-                    <h3 style="margin-bottom:15px">${ep.name}</h3>
-                    <a href="${ep.url}" target="_blank" class="btn-watch">مشاهدة الآن</a>
-                    <button onclick="deleteItem(${index})" style="background:none; border:none; color:#ef4444; cursor:pointer; margin-top:10px; font-size:12px; display:block">حذف من القائمة</button>
-                </div>
+        
+        <div id="messages">
             </div>
-        `).join('');
-    }
 
-    function addItem() {
-        const name = document.getElementById('nameInput').value;
-        const image = document.getElementById('imgInput').value;
-        const url = document.getElementById('urlInput').value;
+        <div class="input-bar">
+            <input type="text" id="msg-input" placeholder="اكتب رسالتك المشفرة...">
+            <button onclick="sendMessage()" style="width: auto; padding: 0 25px; margin: 0;">إرسال</button>
+        </div>
+    </div>
 
-        if(name && url) {
-            episodes.push({ name, image, url });
-            render();
-            updateJSON();
-            // مسح الخانات
-            document.getElementById('nameInput').value = '';
-            document.getElementById('imgInput').value = '';
-            document.getElementById('urlInput').value = '';
+    <script>
+        let user = "";
+        let isAdmin = false;
+
+        function login() {
+            const nameInput = document.getElementById('username');
+            const codeInput = document.getElementById('secret-code');
+
+            if (codeInput.value === "1234" && nameInput.value.trim() !== "") {
+                user = nameInput.value;
+                isAdmin = user.toLowerCase().includes("admin");
+                
+                document.getElementById('login-screen').style.display = 'none';
+                document.getElementById('chat-screen').style.display = 'flex';
+                document.getElementById('display-name').innerText = "أهلاً، " + user;
+            } else {
+                alert("بيانات الدخول غير صحيحة!");
+            }
         }
-    }
 
-    function deleteItem(index) {
-        if(confirm("هل تريد حذف هذا المسلسل؟")) {
-            episodes.splice(index, 1);
-            render();
-            updateJSON();
+        function sendMessage() {
+            const input = document.getElementById('msg-input');
+            const text = input.value.trim();
+            if (!text) return;
+
+            const msgDiv = document.createElement('div');
+            msgDiv.className = `message ${isAdmin ? 'admin-msg' : 'user-msg'}`;
+            
+            const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            
+            msgDiv.innerHTML = `
+                <span class="meta">${user} • ${time} ${isAdmin ? '[MOD]' : ''}</span>
+                <div>${text}</div>
+            `;
+
+            const container = document.getElementById('messages');
+            container.appendChild(msgDiv);
+            input.value = "";
+            container.scrollTop = container.scrollHeight;
         }
-    }
 
-    function updateJSON() {
-        document.getElementById('jsonOutput').value = JSON.stringify(episodes, null, 2);
-    }
-
-    function copyJSON() {
-        const copyText = document.getElementById("jsonOutput");
-        copyText.select();
-        document.execCommand("copy");
-        alert("تم نسخ الكود! الآن ضعه في ملف data.json في GitHub.");
-    }
-
-    function toggleAdmin() {
-        const pass = prompt("أدخل كلمة السر:");
-        if(pass === "0000") {
-            const panel = document.getElementById('adminPanel');
-            panel.style.display = (panel.style.display === 'block') ? 'none' : 'block';
-        }
-    }
-
-    loadData();
-</script>
-
+        document.getElementById('msg-input').onkeypress = (e) => { if(e.key === 'Enter') sendMessage(); };
+    </script>
 </body>
 </html>
