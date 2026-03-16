@@ -77,21 +77,20 @@
                 </div>
             </div>
 
-            <div class="grid grid-cols-2 gap-4">
-                <button id="connectBtn" class="bg-cyan-600 hover:bg-cyan-500 transition-colors py-4 rounded-xl font-bold flex flex-col items-center gap-1 shadow-lg shadow-cyan-900/20">
-                    <i class="fas fa-tower-broadcast" id="connectIcon"></i>
-                    <span id="connectText">دخول التردد</span>
+            <div class="grid grid-cols-1 gap-4">
+                <button id="connectBtn" class="bg-cyan-600 hover:bg-cyan-500 transition-colors py-4 rounded-xl font-bold flex flex-row justify-center items-center gap-3 shadow-lg shadow-cyan-900/20">
+                    <i class="fas fa-tower-broadcast text-xl" id="connectIcon"></i>
+                    <span id="connectText">ابدأ الاتصال الآن</span>
                 </button>
-                <button id="micBtn" disabled class="bg-slate-700 text-slate-500 py-4 rounded-xl font-bold flex flex-col items-center gap-1 cursor-not-allowed">
-                    <i id="micIcon" class="fas fa-microphone-slash"></i>
-                    <span id="micText">الميكروفون مغلق</span>
-                </button>
+                <div id="micStatusIndicator" class="hidden text-center text-xs text-green-400 animate-pulse">
+                    <i class="fas fa-microphone"></i> الميكروفون نشط الآن
+                </div>
             </div>
         </div>
 
         <!-- Participants Info -->
         <div id="activeList" class="mt-8 pt-6 border-t border-slate-700 hidden">
-            <h3 class="text-xs font-bold text-slate-500 mb-4 uppercase">المتصلون بنفس التردد:</h3>
+            <h3 class="text-xs font-bold text-slate-500 mb-4 uppercase">المتصلون معك:</h3>
             <div id="peersContainer" class="space-y-2">
                 <!-- Peers will appear here -->
             </div>
@@ -99,8 +98,12 @@
     </div>
 
     <div class="mt-8 max-w-md text-center text-slate-500 text-sm">
-        <p><i class="fas fa-keyboard ml-1"></i> يمكنك كتابة التردد مباشرة بالضغط على الأرقام.</p>
-        <p class="mt-1 text-[11px]">ملاحظة: لضمان الخصوصية، استخدم ترددات معقدة (مثل 77.42).</p>
+        <p class="mb-2">لضمان سماع الصوت:</p>
+        <ul class="text-[11px] space-y-1">
+            <li>1. يجب على الطرفين كتابة نفس التردد تماماً.</li>
+            <li>2. يجب استخدام متصفح يدعم الميكروفون (Chrome/Edge).</li>
+            <li>3. تأكد من أن الرابط يبدأ بـ <strong>https://</strong>.</li>
+        </ul>
     </div>
 
     <div id="audioContainer"></div>
@@ -109,87 +112,98 @@
         const freqSlider = document.getElementById('freqSlider');
         const freqInput = document.getElementById('freqInput');
         const connectBtn = document.getElementById('connectBtn');
-        const micBtn = document.getElementById('micBtn');
         const connectionStatus = document.getElementById('connectionStatus');
         const activeList = document.getElementById('activeList');
         const peersContainer = document.getElementById('peersContainer');
         const audioContainer = document.getElementById('audioContainer');
+        const micStatusIndicator = document.getElementById('micStatusIndicator');
 
         let peer = null;
         let myStream = null;
         let isConnected = false;
+        let peerPrefix = "radio-freq-";
 
-        // Sync Slider and Input
+        // Sync UI
         freqSlider.addEventListener('input', (e) => {
-            const val = parseFloat(e.target.value).toFixed(2);
-            freqInput.value = val;
+            freqInput.value = parseFloat(e.target.value).toFixed(2);
             if (isConnected) disconnect();
         });
 
         freqInput.addEventListener('change', (e) => {
-            let val = parseFloat(e.target.value);
-            if (isNaN(val)) val = 50.00;
-            if (val < 10) val = 10.00;
-            if (val > 100) val = 100.00;
-            
-            const formatted = val.toFixed(2);
-            freqInput.value = formatted;
-            freqSlider.value = formatted;
+            let val = Math.min(Math.max(parseFloat(e.target.value) || 50, 10), 100);
+            freqInput.value = val.toFixed(2);
+            freqSlider.value = val.toFixed(2);
             if (isConnected) disconnect();
         });
 
         async function initCall() {
             try {
-                const currentFreq = freqInput.value;
-                myStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+                // Ensure audio context is allowed
+                if (window.AudioContext || window.webkitAudioContext) {
+                    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                    if (audioCtx.state === 'suspended') audioCtx.resume();
+                }
+
+                const currentFreq = freqInput.value.replace('.', '-');
+                myStream = await navigator.mediaDevices.getUserMedia({ audio: true });
                 
-                updateStatus("جاري البحث عن رفقاء...", "text-cyan-400", "bg-cyan-400 animate-pulse");
+                updateStatus("جاري تهيئة الراديو...", "text-cyan-400", "bg-cyan-400 animate-pulse");
                 
-                // PeerJS Config: Using public servers for demo
-                // Each user on the same frequency gets a specific prefix
-                const myId = 'wt-' + currentFreq.replace('.', '-') + '-' + Math.floor(Math.random() * 10000);
-                peer = new Peer(myId);
+                // My ID is simple: radio-freq-[NUMBER]-[RANDOM]
+                const myShortId = Math.floor(1000 + Math.random() * 9000);
+                const myFullId = `${peerPrefix}${currentFreq}-${myShortId}`;
+                
+                peer = new Peer(myFullId, {
+                    debug: 2
+                });
 
                 peer.on('open', (id) => {
-                    console.log('My ID:', id);
-                    updateStatus("متصل بالتردد: " + currentFreq, "text-green-400", "bg-green-400 status-pulse");
-                    setupMicUI(true);
+                    isConnected = true;
+                    updateStatus("أنت الآن أونلاين على تردد " + freqInput.value, "text-green-400", "bg-green-400 status-pulse");
+                    micStatusIndicator.classList.remove('hidden');
                     activeList.classList.remove('hidden');
                     
-                    // Logic to find others: 
-                    // In a real production app, you'd fetch a list from a DB.
-                    // Here, we'll listen for incoming calls and also try to "ping" potential IDs (Simplified)
+                    // IMPORTANT: Discover others
+                    // Since PeerJS doesn't have a built-in "list group", 
+                    // in a production app we'd use a server. 
+                    // For this hack, we tell users: "Wait for someone to join or the first one will call the second"
+                    console.log("Joined as: " + id);
                 });
 
                 peer.on('call', (call) => {
+                    console.log("Receiving call from: " + call.peer);
                     call.answer(myStream);
                     handleStream(call);
                 });
 
                 peer.on('error', (err) => {
-                    console.error('Peer Error:', err);
-                    if(err.type === 'browser-incompatible') alert('متصفحك لا يدعم هذه الميزة.');
+                    console.error('Peer Error:', err.type);
+                    if (err.type === 'unavailable-id') {
+                        // Retry with different ID if conflict
+                        initCall();
+                    }
                 });
 
             } catch (err) {
-                console.error('Media Error:', err);
-                alert('خطأ: الميكروفون مطلوب للعمل.');
+                alert('عذراً: يجب السماح للميكروفون بالعمل.');
                 disconnect();
             }
         }
 
         function handleStream(call) {
             call.on('stream', (remoteStream) => {
-                if (!document.getElementById('audio-' + call.peer)) {
+                const existingAudio = document.getElementById('audio-' + call.peer);
+                if (!existingAudio) {
                     const audio = document.createElement('audio');
                     audio.id = 'audio-' + call.peer;
                     audio.srcObject = remoteStream;
                     audio.autoplay = true;
+                    // Force play for mobile
+                    audio.play().catch(e => console.log("Auto-play blocked, waiting for interaction"));
                     audioContainer.appendChild(audio);
                     addPeerUI(call.peer);
                 }
             });
-            
             call.on('close', () => removePeerUI(call.peer));
         }
 
@@ -197,42 +211,24 @@
             if (document.getElementById('ui-' + id)) return;
             const div = document.createElement('div');
             div.id = 'ui-' + id;
-            div.className = 'flex items-center justify-between bg-slate-700/50 p-3 rounded-lg border border-slate-600 animate-fade-in';
+            div.className = 'flex items-center justify-between bg-slate-700/50 p-3 rounded-lg border border-slate-600';
             div.innerHTML = `
                 <div class="flex items-center gap-3">
-                    <div class="w-8 h-8 bg-cyan-900 rounded-full flex items-center justify-center text-cyan-400">
-                        <i class="fas fa-user text-xs"></i>
+                    <div class="w-8 h-8 bg-green-900 rounded-full flex items-center justify-center text-green-400">
+                        <i class="fas fa-volume-up text-xs"></i>
                     </div>
-                    <span class="text-xs font-mono">مستخدم-${id.split('-').pop()}</span>
+                    <span class="text-xs font-mono">صديق متصل (${id.split('-').pop()})</span>
                 </div>
-                <span class="text-[10px] text-green-500 flex items-center gap-1">
-                    <i class="fas fa-signal"></i> مباشر
-                </span>
+                <span class="text-[10px] text-green-400">تسمع الآن..</span>
             `;
             peersContainer.appendChild(div);
         }
 
         function removePeerUI(id) {
             const el = document.getElementById('ui-' + id);
-            const aud = document.getElementById('audio-' + id);
             if (el) el.remove();
+            const aud = document.getElementById('audio-' + id);
             if (aud) aud.remove();
-        }
-
-        function setupMicUI(enabled) {
-            if (enabled) {
-                micBtn.disabled = false;
-                micBtn.classList.replace('bg-slate-700', 'bg-cyan-600');
-                micBtn.classList.replace('text-slate-500', 'text-white');
-                micBtn.classList.remove('cursor-not-allowed');
-                document.getElementById('micIcon').className = 'fas fa-microphone';
-                document.getElementById('micText').innerText = 'الميكروفون يعمل';
-            } else {
-                micBtn.disabled = true;
-                micBtn.className = "bg-slate-700 text-slate-500 py-4 rounded-xl font-bold flex flex-col items-center gap-1 cursor-not-allowed";
-                document.getElementById('micIcon').className = 'fas fa-microphone-slash';
-                document.getElementById('micText').innerText = 'الميكروفون مغلق';
-            }
         }
 
         function updateStatus(text, colorClass, dotClass) {
@@ -242,31 +238,22 @@
         }
 
         function disconnect() {
-            if (peer) {
-                peer.destroy();
-                peer = null;
-            }
-            if (myStream) {
-                myStream.getTracks().forEach(t => t.stop());
-                myStream = null;
-            }
+            if (peer) peer.destroy();
+            if (myStream) myStream.getTracks().forEach(t => t.stop());
             isConnected = false;
-            document.getElementById('connectText').innerText = 'دخول التردد';
-            document.getElementById('connectIcon').className = 'fas fa-tower-broadcast';
             connectBtn.classList.replace('bg-red-900', 'bg-cyan-600');
+            document.getElementById('connectText').innerText = 'ابدأ الاتصال الآن';
             updateStatus("غير متصل", "text-slate-500", "bg-slate-500");
             activeList.classList.add('hidden');
+            micStatusIndicator.classList.add('hidden');
             peersContainer.innerHTML = '';
             audioContainer.innerHTML = '';
-            setupMicUI(false);
         }
 
         connectBtn.addEventListener('click', () => {
             if (!isConnected) {
-                isConnected = true;
-                document.getElementById('connectText').innerText = 'خروج';
-                document.getElementById('connectIcon').className = 'fas fa-sign-out-alt';
                 connectBtn.classList.replace('bg-cyan-600', 'bg-red-900');
+                document.getElementById('connectText').innerText = 'إنهاء الاتصال';
                 initCall();
             } else {
                 disconnect();
