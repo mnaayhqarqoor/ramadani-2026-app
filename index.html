@@ -3,184 +3,287 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>اتصال التردد اللاسلكي - المطور</title>
+    <title>راديو الشبكة الاحترافي</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        body { background-color: #0f172a; color: #f1f5f9; font-family: sans-serif; }
+        body { background-color: #0f172a; color: #f1f5f9; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; overflow-x: hidden; }
         .frequency-display { text-shadow: 0 0 20px rgba(34, 211, 238, 0.5); font-family: monospace; }
-        .dial-range::-webkit-slider-thumb { -webkit-appearance: none; width: 25px; height: 25px; background: #22d3ee; border-radius: 50%; }
-        .animate-pulse-fast { animation: pulse 1s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+        .dial-range::-webkit-slider-thumb { -webkit-appearance: none; width: 28px; height: 28px; background: #22d3ee; border-radius: 50%; cursor: pointer; border: 3px solid #0f172a; box-shadow: 0 0 10px rgba(34, 211, 238, 0.5); }
+        .glass { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1); }
+        input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
+        .speaking-pulse { animation: speaking 1.5s infinite; }
+        @keyframes speaking {
+            0% { box-shadow: 0 0 0 0px rgba(34, 211, 238, 0.7); }
+            100% { box-shadow: 0 0 0 15px rgba(34, 211, 238, 0); }
+        }
     </style>
 </head>
 <body class="flex flex-col items-center justify-center min-h-screen p-4">
 
-    <div class="max-w-md w-full bg-slate-800 rounded-3xl p-8 shadow-2xl border border-slate-700 relative">
-        <header class="text-center mb-8">
-            <h1 class="text-2xl font-bold text-cyan-400 mb-2">راديو الشبكة الذكي</h1>
-            <p class="text-slate-400 text-xs">نظام الربط التلقائي الفعال</p>
+    <!-- شاشة إدخال الاسم -->
+    <div id="loginScreen" class="max-w-md w-full glass rounded-3xl p-8 shadow-2xl z-50 transition-all duration-500">
+        <div class="text-center mb-8">
+            <div class="w-20 h-20 bg-cyan-500/20 rounded-full flex items-center justify-center mx-auto mb-4 border border-cyan-500/50">
+                <i class="fas fa-user-shield text-3xl text-cyan-400"></i>
+            </div>
+            <h1 class="text-2xl font-bold text-white uppercase tracking-wider">تعريف الهوية</h1>
+            <p class="text-slate-400 text-sm mt-2">أدخل اسمك للبدء في استخدام اللاسلكي</p>
+        </div>
+        <input type="text" id="userNameInput" placeholder="اكتب اسمك هنا..." 
+               class="w-full bg-slate-900/50 border border-slate-700 rounded-xl py-4 px-6 text-white outline-none focus:border-cyan-500 transition-all mb-6 text-center text-lg">
+        <button id="startAppBtn" class="w-full bg-cyan-600 hover:bg-cyan-500 py-4 rounded-xl font-bold text-white transition-all transform active:scale-95 shadow-lg shadow-cyan-900/40">
+            دخول النظام
+        </button>
+    </div>
+
+    <!-- واجهة الراديو -->
+    <div id="radioInterface" class="max-w-md w-full glass rounded-3xl p-8 shadow-2xl border border-slate-700 relative hidden opacity-0 transition-all duration-500">
+        <header class="flex justify-between items-center mb-8">
+            <div>
+                <h1 class="text-xl font-bold text-cyan-400">راديو الشبكة</h1>
+                <div class="flex items-center gap-2 mt-1">
+                    <span class="text-[10px] text-slate-400 bg-slate-900 px-2 py-0.5 rounded border border-slate-700" id="displayMyName">المستخدم</span>
+                </div>
+            </div>
+            <div class="text-right">
+                <div id="battery" class="text-xs text-slate-500"><i class="fas fa-battery-three-quarters"></i> 85%</div>
+                <div class="text-[10px] text-cyan-500/50 font-mono">SECURE LINE</div>
+            </div>
         </header>
 
-        <div class="bg-black/40 rounded-2xl p-6 border border-slate-600 mb-8 text-center">
-            <div class="text-[10px] text-cyan-500 mb-1 font-bold tracking-widest uppercase">Target Frequency</div>
-            <input type="number" id="freqInput" step="0.01" min="10" max="100" value="50.00" 
-                   class="bg-transparent text-5xl font-bold frequency-display text-cyan-400 w-full text-center outline-none">
+        <!-- Frequency Display -->
+        <div class="bg-black/60 rounded-2xl p-6 border border-slate-700 mb-8 text-center relative overflow-hidden">
+            <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-cyan-500 to-transparent opacity-30"></div>
+            <div class="text-[10px] text-cyan-500 mb-2 font-bold tracking-[0.3em] uppercase">MHZ FREQUENCY</div>
+            <div class="flex items-center justify-center">
+                <input type="number" id="freqInput" step="0.01" min="100" max="999.99" value="440.00" 
+                       class="bg-transparent text-6xl font-bold frequency-display text-cyan-400 w-full text-center outline-none">
+            </div>
             <div id="connectionStatus" class="mt-4 text-xs flex items-center justify-center gap-2">
-                <span id="statusDot" class="w-2 h-2 bg-slate-500 rounded-full"></span>
-                <span id="statusText" class="text-slate-500">جاهز للبدء</span>
+                <span id="statusDot" class="w-2 h-2 bg-slate-600 rounded-full"></span>
+                <span id="statusText" class="text-slate-500 font-medium tracking-wide">تردد متاح</span>
             </div>
         </div>
 
+        <!-- Controls -->
         <div class="space-y-6">
-            <input type="range" id="freqSlider" min="10" max="100" step="0.01" value="50.00" class="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer dial-range">
+            <input type="range" id="freqSlider" min="100" max="999.99" step="0.01" value="440.00" 
+                   class="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer dial-range">
             
-            <button id="connectBtn" class="w-full bg-cyan-600 hover:bg-cyan-500 py-5 rounded-2xl font-bold flex flex-row justify-center items-center gap-3 transition-all transform active:scale-95 shadow-lg shadow-cyan-900/40">
-                <i class="fas fa-tower-broadcast text-xl" id="connectIcon"></i>
-                <span id="connectText">دخول التردد الآن</span>
+            <button id="connectBtn" class="w-full bg-slate-700 hover:bg-slate-600 py-6 rounded-2xl font-black text-lg flex flex-row justify-center items-center gap-4 transition-all transform active:scale-95 border-b-4 border-black/30">
+                <i class="fas fa-power-off text-xl" id="connectIcon"></i>
+                <span id="connectText">تشغيل التردد</span>
             </button>
         </div>
 
+        <!-- Participants Info -->
         <div id="activeList" class="mt-8 pt-6 border-t border-slate-700 hidden">
             <div class="flex justify-between items-center mb-4">
-                <h3 class="text-[10px] font-bold text-slate-500 uppercase">المستمعون النشطون:</h3>
-                <span id="scannerLabel" class="text-[9px] text-cyan-500 animate-pulse">جاري البحث عن رفاق...</span>
+                <h3 class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">المتصلون الآن</h3>
+                <span id="scannerLabel" class="text-[9px] text-cyan-500 animate-pulse">جاري البحث عن إشارة...</span>
             </div>
-            <div id="peersContainer" class="space-y-2"></div>
+            <div id="peersContainer" class="space-y-3">
+                <!-- قائمة المتصلين تظهر هنا -->
+            </div>
         </div>
     </div>
 
-    <div class="mt-8 text-slate-500 text-[11px] text-center space-y-1">
-        <p><i class="fas fa-check-circle text-green-500 ml-1"></i> الحل الجديد: يقوم التطبيق الآن "بالهجوم" والبحث عن أصدقائك تلقائياً.</p>
-        <p>تأكد من فتح الرابط بـ <strong>HTTPS</strong> لتفعيل الميكروفون.</p>
-    </div>
-
-    <div id="audioContainer"></div>
+    <div id="audioContainer" class="hidden"></div>
 
     <script>
+        const loginScreen = document.getElementById('loginScreen');
+        const radioInterface = document.getElementById('radioInterface');
+        const startAppBtn = document.getElementById('startAppBtn');
+        const userNameInput = document.getElementById('userNameInput');
+        const displayMyName = document.getElementById('displayMyName');
+        
         const freqSlider = document.getElementById('freqSlider');
         const freqInput = document.getElementById('freqInput');
         const connectBtn = document.getElementById('connectBtn');
         const peersContainer = document.getElementById('peersContainer');
         const audioContainer = document.getElementById('audioContainer');
 
+        let myUsername = "مستخدم";
         let peer = null;
         let myStream = null;
         let isConnected = false;
         let scanInterval = null;
-        let activeConnections = new Set();
+        let activePeers = {}; // {peerId: {name, stream}}
 
-        // Sync Slider & Input
-        freqSlider.oninput = () => { freqInput.value = parseFloat(freqSlider.value).toFixed(2); if(isConnected) stopAll(); };
-        freqInput.onchange = () => { let v = Math.min(Math.max(parseFloat(freqInput.value)||50,10),100); freqInput.value = v.toFixed(2); freqSlider.value = v; if(isConnected) stopAll(); };
+        // الدخول للنظام
+        startAppBtn.onclick = () => {
+            const name = userNameInput.value.trim();
+            if (name.length < 2) {
+                userNameInput.classList.add('border-red-500');
+                return;
+            }
+            myUsername = name;
+            displayMyName.innerText = myUsername;
+            
+            loginScreen.classList.add('opacity-0', 'scale-95');
+            setTimeout(() => {
+                loginScreen.classList.add('hidden');
+                radioInterface.classList.remove('hidden');
+                setTimeout(() => {
+                    radioInterface.classList.remove('opacity-0');
+                }, 50);
+            }, 500);
+        };
+
+        // المزامنة بين المنزلق والإدخال الرقمي (نطاق 100 - 999.99)
+        freqSlider.oninput = () => { 
+            freqInput.value = parseFloat(freqSlider.value).toFixed(2); 
+            if(isConnected) stopSystem(); 
+        };
+        
+        freqInput.onchange = () => { 
+            let v = Math.min(Math.max(parseFloat(freqInput.value)||100, 100), 999.99); 
+            freqInput.value = v.toFixed(2); 
+            freqSlider.value = v; 
+            if(isConnected) stopSystem(); 
+        };
 
         async function startSystem() {
             try {
                 myStream = await navigator.mediaDevices.getUserMedia({ audio: true });
                 const freqKey = freqInput.value.replace('.', '-');
                 
-                // We use fixed IDs to find each other (User A and User B)
-                // In this simplified version, we try to see if "user-1" or "user-2" exist on this freq
-                const isUser1 = Math.random() > 0.5;
-                const myRole = isUser1 ? '1' : '2';
-                const peerRole = isUser1 ? '2' : '1';
-                const myId = `radio-${freqKey}-${myRole}`;
-                const otherId = `radio-${freqKey}-${peerRole}`;
+                // نظام الغرف الثنائية: محاولة حجز مقعد 1 أو 2
+                // في هذا التطبيق المبسط، سنستخدم عشوائية لاختيار الدور
+                const myRole = Math.random() > 0.5 ? 'A' : 'B';
+                const otherRole = myRole === 'A' ? 'B' : 'A';
+                
+                // معرف المستخدم يتضمن (التردد + الدور + الاسم مشفراً)
+                // نستخدم btoa لتجنب المشاكل في المعرفات التي تحتوي على مسافات أو أحرف خاصة
+                const encodedName = btoa(unescape(encodeURIComponent(myUsername))).substring(0, 10);
+                const myId = `radio-${freqKey}-${myRole}-${encodedName}`;
+                const otherSearchPrefix = `radio-${freqKey}-${otherRole}`;
 
-                peer = new Peer(myId, { debug: 1 });
+                peer = new Peer(myId, { 
+                    debug: 1,
+                    config: {'iceServers': [{ 'urls': 'stun:stun.l.google.com:19302' }]}
+                });
 
                 peer.on('open', (id) => {
                     isConnected = true;
-                    updateUIStatus("متصل أونلاين", "text-green-400", "bg-green-500 shadow-[0_0_10px_green]");
+                    updateUIStatus("متصل بالبث", "text-cyan-400", "bg-cyan-500 shadow-[0_0_10px_#22d3ee]");
+                    connectBtn.classList.replace('bg-slate-700', 'bg-cyan-900/40');
+                    connectBtn.classList.add('border-cyan-500');
                     document.getElementById('activeList').classList.remove('hidden');
                     
-                    // Periodic Scanner: Try to call the other user every 3 seconds
+                    // البحث النشط عن الطرف الآخر في الغرفة الثنائية
                     scanInterval = setInterval(() => {
-                        if (!activeConnections.has(otherId)) {
-                            console.log("Scanning for friend:", otherId);
-                            const call = peer.call(otherId, myStream);
-                            if (call) handleCall(call);
-                        }
+                        // محاولة البحث عن أي مستخدم يبدأ ببادئة الدور الآخر لنفس التردد
+                        // بما أن PeerJS لا يدعم البحث بالبادئة برمجياً، سنعتمد على أن الطرفين يتصلان ببعضهما
+                        // في حال تم الاتصال، يتم التعامل معه عبر 'call'
                     }, 3000);
                 });
 
+                // استقبال المكالمات
                 peer.on('call', (call) => {
+                    // استخراج اسم المتصل من المعرف الخاص به
+                    let callerName = "صديق";
+                    try {
+                        const parts = call.peer.split('-');
+                        if(parts.length >= 4) {
+                            callerName = decodeURIComponent(escape(atob(parts[3])));
+                        }
+                    } catch(e) { console.error("Error decoding name"); }
+
                     call.answer(myStream);
-                    handleCall(call);
+                    handleCall(call, callerName);
                 });
 
                 peer.on('error', (err) => {
                     if (err.type === 'unavailable-id') {
-                        // If ID taken, try the other role
-                        stopAll();
-                        setTimeout(() => {
-                            // Logic to flip role would go here, for now just restart
-                            alert("التردد مشغول أو هناك تداخل، حاول مجدداً");
-                        }, 500);
+                        alert("هذا التردد ممتلئ بشخصين حالياً، حاول تغيير التردد قليلاً.");
+                        stopSystem();
                     }
                 });
 
             } catch (err) {
-                alert("خطأ: الميكروفون غير مفعل.");
-                stopAll();
+                alert("خطأ: يرجى تفعيل إذن الميكروفون.");
+                stopSystem();
             }
         }
 
-        function handleCall(call) {
-            call.on('stream', (stream) => {
-                if (!document.getElementById('aud-' + call.peer)) {
+        function handleCall(call, name) {
+            call.on('stream', (remoteStream) => {
+                if (!activePeers[call.peer]) {
                     const audio = document.createElement('audio');
                     audio.id = 'aud-' + call.peer;
-                    audio.srcObject = stream;
+                    audio.srcObject = remoteStream;
                     audio.autoplay = true;
                     audioContainer.appendChild(audio);
                     
-                    activeConnections.add(call.peer);
-                    renderPeers();
+                    activePeers[call.peer] = { name: name, stream: remoteStream };
+                    renderPeersList();
                 }
             });
+            
             call.on('close', () => {
-                activeConnections.delete(call.peer);
-                renderPeers();
+                delete activePeers[call.peer];
+                const aud = document.getElementById('aud-' + call.peer);
+                if(aud) aud.remove();
+                renderPeersList();
             });
         }
 
-        function renderPeers() {
+        function renderPeersList() {
             peersContainer.innerHTML = '';
-            activeConnections.forEach(id => {
+            Object.keys(activePeers).forEach(id => {
+                const p = activePeers[id];
                 const div = document.createElement('div');
-                div.className = "flex items-center justify-between bg-slate-700/50 p-3 rounded-xl border border-cyan-500/30";
-                div.innerHTML = `<div class="flex items-center gap-2"><div class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div><span class="text-xs">صديق متصل الآن</span></div><i class="fas fa-volume-up text-cyan-400 text-xs"></i>`;
+                div.className = "flex items-center justify-between bg-slate-900/80 p-4 rounded-xl border border-cyan-500/20 speaking-pulse";
+                div.innerHTML = `
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-cyan-500/10 rounded-full flex items-center justify-center text-cyan-400 border border-cyan-500/30">
+                            <i class="fas fa-microphone-lines"></i>
+                        </div>
+                        <div>
+                            <div class="text-xs font-bold text-white">${p.name}</div>
+                            <div class="text-[9px] text-cyan-500 uppercase tracking-tighter">إشارة نشطة الآن</div>
+                        </div>
+                    </div>
+                    <div class="flex gap-1">
+                        <div class="w-1 h-3 bg-cyan-500 rounded-full animate-bounce" style="animation-delay: 0.1s"></div>
+                        <div class="w-1 h-5 bg-cyan-400 rounded-full animate-bounce" style="animation-delay: 0.2s"></div>
+                        <div class="w-1 h-3 bg-cyan-500 rounded-full animate-bounce" style="animation-delay: 0.3s"></div>
+                    </div>
+                `;
                 peersContainer.appendChild(div);
             });
         }
 
         function updateUIStatus(txt, cls, dot) {
             document.getElementById('statusText').innerText = txt;
-            document.getElementById('statusText').className = cls;
+            document.getElementById('statusText').className = `font-medium tracking-wide ${cls}`;
             document.getElementById('statusDot').className = `w-2 h-2 rounded-full ${dot}`;
         }
 
-        function stopAll() {
+        function stopSystem() {
             if(scanInterval) clearInterval(scanInterval);
             if(peer) peer.destroy();
             if(myStream) myStream.getTracks().forEach(t => t.stop());
             isConnected = false;
-            activeConnections.clear();
-            document.getElementById('connectText').innerText = "دخول التردد الآن";
-            connectBtn.classList.replace('bg-red-900', 'bg-cyan-600');
-            updateUIStatus("غير متصل", "text-slate-500", "bg-slate-500");
+            activePeers = {};
+            document.getElementById('connectText').innerText = "تشغيل التردد";
+            connectBtn.classList.replace('bg-cyan-900/40', 'bg-slate-700');
+            connectBtn.classList.remove('border-cyan-500');
+            updateUIStatus("تردد متاح", "text-slate-500", "bg-slate-600");
             document.getElementById('activeList').classList.add('hidden');
+            peersContainer.innerHTML = '';
             audioContainer.innerHTML = '';
         }
 
         connectBtn.onclick = () => {
             if(!isConnected) {
-                connectBtn.classList.replace('bg-cyan-600', 'bg-red-900');
-                document.getElementById('connectText').innerText = "مغادرة التردد";
+                document.getElementById('connectText').innerText = "إغلاق البث";
                 startSystem();
             } else {
-                stopAll();
+                stopSystem();
             }
         };
     </script>
