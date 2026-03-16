@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>راديو الشبكة الاحترافي</title>
+    <title>راديو الشبكة الجماعي</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
@@ -13,79 +13,82 @@
         .dial-range::-webkit-slider-thumb { -webkit-appearance: none; width: 28px; height: 28px; background: #22d3ee; border-radius: 50%; cursor: pointer; border: 3px solid #0f172a; box-shadow: 0 0 10px rgba(34, 211, 238, 0.5); }
         .glass { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1); }
         input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
-        .speaking-pulse { animation: speaking 1.5s infinite; }
-        @keyframes speaking {
-            0% { box-shadow: 0 0 0 0px rgba(34, 211, 238, 0.7); }
-            100% { box-shadow: 0 0 0 15px rgba(34, 211, 238, 0); }
-        }
+        .user-card { transition: all 0.3s ease; }
+        .user-card.speaking { border-color: #22d3ee; background: rgba(34, 211, 238, 0.1); transform: scale(1.02); }
     </style>
 </head>
 <body class="flex flex-col items-center justify-center min-h-screen p-4">
 
-    <!-- شاشة إدخال الاسم -->
+    <!-- شاشة تسجيل الدخول -->
     <div id="loginScreen" class="max-w-md w-full glass rounded-3xl p-8 shadow-2xl z-50 transition-all duration-500">
         <div class="text-center mb-8">
             <div class="w-20 h-20 bg-cyan-500/20 rounded-full flex items-center justify-center mx-auto mb-4 border border-cyan-500/50">
-                <i class="fas fa-user-shield text-3xl text-cyan-400"></i>
+                <i class="fas fa-users text-3xl text-cyan-400"></i>
             </div>
-            <h1 class="text-2xl font-bold text-white uppercase tracking-wider">تعريف الهوية</h1>
-            <p class="text-slate-400 text-sm mt-2">أدخل اسمك للبدء في استخدام اللاسلكي</p>
+            <h1 class="text-2xl font-bold text-white tracking-wider">راديو الجماعة</h1>
+            <p class="text-slate-400 text-sm mt-2">تحدث مع الجميع على نفس التردد</p>
         </div>
-        <input type="text" id="userNameInput" placeholder="اكتب اسمك هنا..." 
-               class="w-full bg-slate-900/50 border border-slate-700 rounded-xl py-4 px-6 text-white outline-none focus:border-cyan-500 transition-all mb-6 text-center text-lg">
-        <button id="startAppBtn" class="w-full bg-cyan-600 hover:bg-cyan-500 py-4 rounded-xl font-bold text-white transition-all transform active:scale-95 shadow-lg shadow-cyan-900/40">
-            دخول النظام
-        </button>
+        
+        <div class="space-y-6">
+            <div>
+                <label class="text-xs text-slate-500 mb-1 block mr-1">اسمك المستعار:</label>
+                <input type="text" id="userNameInput" placeholder="اكتب اسمك هنا..." 
+                       class="w-full bg-slate-900/50 border border-slate-700 rounded-xl py-4 px-5 text-white outline-none focus:border-cyan-500 transition-all text-center text-lg">
+            </div>
+
+            <button id="startAppBtn" class="w-full bg-cyan-600 hover:bg-cyan-500 py-4 rounded-xl font-bold text-white transition-all transform active:scale-95 shadow-lg shadow-cyan-900/40">
+                فتح الجهاز
+            </button>
+        </div>
     </div>
 
-    <!-- واجهة الراديو -->
+    <!-- واجهة الراديو الرئيسية -->
     <div id="radioInterface" class="max-w-md w-full glass rounded-3xl p-8 shadow-2xl border border-slate-700 relative hidden opacity-0 transition-all duration-500">
         <header class="flex justify-between items-center mb-8">
             <div>
-                <h1 class="text-xl font-bold text-cyan-400">راديو الشبكة</h1>
+                <h1 class="text-xl font-bold text-cyan-400">البث الجماعي</h1>
                 <div class="flex items-center gap-2 mt-1">
                     <span class="text-[10px] text-slate-400 bg-slate-900 px-2 py-0.5 rounded border border-slate-700" id="displayMyName">المستخدم</span>
                 </div>
             </div>
             <div class="text-right">
-                <div id="battery" class="text-xs text-slate-500"><i class="fas fa-battery-three-quarters"></i> 85%</div>
-                <div class="text-[10px] text-cyan-500/50 font-mono">SECURE LINE</div>
+                <div class="text-[10px] text-cyan-500 font-mono">CHANNEL OPEN</div>
+                <div class="text-[10px] text-slate-500" id="peerIdDisplay">ID: ...</div>
             </div>
         </header>
 
-        <!-- Frequency Display -->
-        <div class="bg-black/60 rounded-2xl p-6 border border-slate-700 mb-8 text-center relative overflow-hidden">
-            <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-cyan-500 to-transparent opacity-30"></div>
-            <div class="text-[10px] text-cyan-500 mb-2 font-bold tracking-[0.3em] uppercase">MHZ FREQUENCY</div>
+        <!-- شاشة التردد -->
+        <div class="bg-black/60 rounded-2xl p-6 border border-slate-700 mb-8 text-center relative">
+            <div class="text-[10px] text-cyan-500 mb-2 font-bold tracking-[0.3em] uppercase">FREQUENCY RANGE 100-999</div>
             <div class="flex items-center justify-center">
                 <input type="number" id="freqInput" step="0.01" min="100" max="999.99" value="440.00" 
                        class="bg-transparent text-6xl font-bold frequency-display text-cyan-400 w-full text-center outline-none">
             </div>
             <div id="connectionStatus" class="mt-4 text-xs flex items-center justify-center gap-2">
                 <span id="statusDot" class="w-2 h-2 bg-slate-600 rounded-full"></span>
-                <span id="statusText" class="text-slate-500 font-medium tracking-wide">تردد متاح</span>
+                <span id="statusText" class="text-slate-500 font-medium">مغلق</span>
             </div>
         </div>
 
-        <!-- Controls -->
+        <!-- أجهزة التحكم -->
         <div class="space-y-6">
             <input type="range" id="freqSlider" min="100" max="999.99" step="0.01" value="440.00" 
                    class="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer dial-range">
             
-            <button id="connectBtn" class="w-full bg-slate-700 hover:bg-slate-600 py-6 rounded-2xl font-black text-lg flex flex-row justify-center items-center gap-4 transition-all transform active:scale-95 border-b-4 border-black/30">
-                <i class="fas fa-power-off text-xl" id="connectIcon"></i>
-                <span id="connectText">تشغيل التردد</span>
+            <button id="connectBtn" class="w-full bg-slate-700 hover:bg-slate-600 py-6 rounded-2xl font-black text-lg flex flex-row justify-center items-center gap-4 transition-all shadow-xl">
+                <i class="fas fa-satellite-dish text-xl" id="connectIcon"></i>
+                <span id="connectText">دخول التردد</span>
             </button>
         </div>
 
-        <!-- Participants Info -->
+        <!-- قائمة المستخدمين المتصلين -->
         <div id="activeList" class="mt-8 pt-6 border-t border-slate-700 hidden">
             <div class="flex justify-between items-center mb-4">
-                <h3 class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">المتصلون الآن</h3>
-                <span id="scannerLabel" class="text-[9px] text-cyan-500 animate-pulse">جاري البحث عن إشارة...</span>
+                <h3 class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">الأشخاص على هذا التردد</h3>
+                <span id="userCount" class="text-[9px] bg-cyan-500/20 text-cyan-400 px-2 py-0.5 rounded-full">0 متصل</span>
             </div>
-            <div id="peersContainer" class="space-y-3">
-                <!-- قائمة المتصلين تظهر هنا -->
+            <div id="peersContainer" class="space-y-3 max-h-48 overflow-y-auto pr-2">
+                <!-- قائمة المستخدمين -->
             </div>
         </div>
     </div>
@@ -95,49 +98,30 @@
     <script>
         const loginScreen = document.getElementById('loginScreen');
         const radioInterface = document.getElementById('radioInterface');
-        const startAppBtn = document.getElementById('startAppBtn');
-        const userNameInput = document.getElementById('userNameInput');
-        const displayMyName = document.getElementById('displayMyName');
-        
-        const freqSlider = document.getElementById('freqSlider');
         const freqInput = document.getElementById('freqInput');
+        const freqSlider = document.getElementById('freqSlider');
         const connectBtn = document.getElementById('connectBtn');
         const peersContainer = document.getElementById('peersContainer');
         const audioContainer = document.getElementById('audioContainer');
 
-        let myUsername = "مستخدم";
+        let myUsername = "";
         let peer = null;
         let myStream = null;
         let isConnected = false;
-        let scanInterval = null;
-        let activePeers = {}; // {peerId: {name, stream}}
+        let connections = {}; // To store actual data connections
+        let calls = {};       // To store media calls
 
-        // الدخول للنظام
-        startAppBtn.onclick = () => {
-            const name = userNameInput.value.trim();
-            if (name.length < 2) {
-                userNameInput.classList.add('border-red-500');
-                return;
-            }
-            myUsername = name;
-            displayMyName.innerText = myUsername;
-            
-            loginScreen.classList.add('opacity-0', 'scale-95');
-            setTimeout(() => {
-                loginScreen.classList.add('hidden');
-                radioInterface.classList.remove('hidden');
-                setTimeout(() => {
-                    radioInterface.classList.remove('opacity-0');
-                }, 50);
-            }, 500);
+        // تسجيل الدخول
+        document.getElementById('startAppBtn').onclick = () => {
+            myUsername = document.getElementById('userNameInput').value.trim() || "مجهول";
+            document.getElementById('displayMyName').innerText = myUsername;
+            loginScreen.classList.add('hidden');
+            radioInterface.classList.remove('hidden');
+            setTimeout(() => radioInterface.classList.remove('opacity-0'), 50);
         };
 
-        // المزامنة بين المنزلق والإدخال الرقمي (نطاق 100 - 999.99)
-        freqSlider.oninput = () => { 
-            freqInput.value = parseFloat(freqSlider.value).toFixed(2); 
-            if(isConnected) stopSystem(); 
-        };
-        
+        // تحديث التردد
+        freqSlider.oninput = () => { freqInput.value = parseFloat(freqSlider.value).toFixed(2); if(isConnected) stopSystem(); };
         freqInput.onchange = () => { 
             let v = Math.min(Math.max(parseFloat(freqInput.value)||100, 100), 999.99); 
             freqInput.value = v.toFixed(2); 
@@ -150,107 +134,127 @@
                 myStream = await navigator.mediaDevices.getUserMedia({ audio: true });
                 const freqKey = freqInput.value.replace('.', '-');
                 
-                // نظام الغرف الثنائية: محاولة حجز مقعد 1 أو 2
-                // في هذا التطبيق المبسط، سنستخدم عشوائية لاختيار الدور
-                const myRole = Math.random() > 0.5 ? 'A' : 'B';
-                const otherRole = myRole === 'A' ? 'B' : 'A';
+                // المعرف الآن يتكون من التردد + رقم عشوائي فريد لكل مستخدم
+                const myRandomId = Math.floor(1000 + Math.random() * 9000);
+                const myPeerId = `group-radio-${freqKey}-${myRandomId}`;
                 
-                // معرف المستخدم يتضمن (التردد + الدور + الاسم مشفراً)
-                // نستخدم btoa لتجنب المشاكل في المعرفات التي تحتوي على مسافات أو أحرف خاصة
-                const encodedName = btoa(unescape(encodeURIComponent(myUsername))).substring(0, 10);
-                const myId = `radio-${freqKey}-${myRole}-${encodedName}`;
-                const otherSearchPrefix = `radio-${freqKey}-${otherRole}`;
-
-                peer = new Peer(myId, { 
+                peer = new Peer(myPeerId, { 
                     debug: 1,
                     config: {'iceServers': [{ 'urls': 'stun:stun.l.google.com:19302' }]}
                 });
 
                 peer.on('open', (id) => {
                     isConnected = true;
-                    updateUIStatus("متصل بالبث", "text-cyan-400", "bg-cyan-500 shadow-[0_0_10px_#22d3ee]");
-                    connectBtn.classList.replace('bg-slate-700', 'bg-cyan-900/40');
-                    connectBtn.classList.add('border-cyan-500');
+                    document.getElementById('peerIdDisplay').innerText = `ID: ${myRandomId}`;
+                    updateUIStatus("متصل الآن", "text-cyan-400", "bg-cyan-500 shadow-[0_0_10px_#22d3ee]");
+                    connectBtn.classList.replace('bg-slate-700', 'bg-red-900/40');
                     document.getElementById('activeList').classList.remove('hidden');
                     
-                    // البحث النشط عن الطرف الآخر في الغرفة الثنائية
-                    scanInterval = setInterval(() => {
-                        // محاولة البحث عن أي مستخدم يبدأ ببادئة الدور الآخر لنفس التردد
-                        // بما أن PeerJS لا يدعم البحث بالبادئة برمجياً، سنعتمد على أن الطرفين يتصلان ببعضهما
-                        // في حال تم الاتصال، يتم التعامل معه عبر 'call'
-                    }, 3000);
+                    // ملاحظة: في بيئة PeerJS بدون خادم إشارات، التحدي هو معرفة من هم الآخرون.
+                    // سنقوم بمحاولة ذكية: تجربة الاتصال بمجال من المعرفات المحتملة (1000-1010 مثلاً) 
+                    // أو الاعتماد على أن القادم الجديد سيتم الاتصال به من قبل الآخرين إذا عرفوا وجوده.
+                    // كحل عملي للمتصفح: سنقوم بعمل "استطلاع" (Ping) للاتصالات القادمة.
                 });
 
-                // استقبال المكالمات
+                // استقبال المكالمات من أي شخص جديد يدخل
                 peer.on('call', (call) => {
-                    // استخراج اسم المتصل من المعرف الخاص به
-                    let callerName = "صديق";
-                    try {
-                        const parts = call.peer.split('-');
-                        if(parts.length >= 4) {
-                            callerName = decodeURIComponent(escape(atob(parts[3])));
-                        }
-                    } catch(e) { console.error("Error decoding name"); }
-
                     call.answer(myStream);
-                    handleCall(call, callerName);
+                    setupCall(call);
                 });
 
-                peer.on('error', (err) => {
-                    if (err.type === 'unavailable-id') {
-                        alert("هذا التردد ممتلئ بشخصين حالياً، حاول تغيير التردد قليلاً.");
-                        stopSystem();
-                    }
+                // استقبال بيانات (لمعرفة الاسم)
+                peer.on('connection', (conn) => {
+                    conn.on('data', (data) => {
+                        if (data.type === 'identity') {
+                            if (calls[conn.peer]) {
+                                updatePeerName(conn.peer, data.name);
+                            }
+                        }
+                    });
                 });
+
+                // وظيفة للبحث عن الآخرين: بما أننا لا نملك Server، سنطلب من المستخدمين
+                // مشاركة "رقم الـ ID" في الشات أو محاولة الاتصال بـ 5 أرقام عشوائية في نفس التردد
+                scanForPeers(freqKey, myRandomId);
 
             } catch (err) {
-                alert("خطأ: يرجى تفعيل إذن الميكروفون.");
+                alert("يجب السماح بالميكروفون.");
                 stopSystem();
             }
         }
 
-        function handleCall(call, name) {
+        // محاولة ربط عشوائية لاكتشاف المستخدمين الآخرين في نفس التردد
+        function scanForPeers(freqKey, myIdNum) {
+            // سنحاول الاتصال بـ 10 أرقام عشوائية في النطاق 1000-9999
+            // هذه الطريقة تزيد فرص التقاء المستخدمين دون الحاجة لخادم
+            for (let i = 0; i < 15; i++) {
+                let targetIdNum = Math.floor(1000 + Math.random() * 9000);
+                if (targetIdNum === myIdNum) continue;
+
+                let targetFullId = `group-radio-${freqKey}-${targetIdNum}`;
+                
+                // محاولة اتصال بالبيانات أولاً للتحقق من الوجود
+                let conn = peer.connect(targetFullId);
+                conn.on('open', () => {
+                    // إذا نجح الاتصال، نرسل مكالمة صوتية
+                    const call = peer.call(targetFullId, myStream);
+                    setupCall(call);
+                    // نرسل اسمنا لهم
+                    conn.send({ type: 'identity', name: myUsername });
+                });
+            }
+        }
+
+        function setupCall(call) {
+            if (calls[call.peer]) return;
+            
             call.on('stream', (remoteStream) => {
-                if (!activePeers[call.peer]) {
+                if (!document.getElementById('aud-' + call.peer)) {
                     const audio = document.createElement('audio');
                     audio.id = 'aud-' + call.peer;
                     audio.srcObject = remoteStream;
                     audio.autoplay = true;
                     audioContainer.appendChild(audio);
                     
-                    activePeers[call.peer] = { name: name, stream: remoteStream };
-                    renderPeersList();
+                    calls[call.peer] = { stream: remoteStream, name: "مستمع..." };
+                    renderUserList();
                 }
             });
-            
+
             call.on('close', () => {
-                delete activePeers[call.peer];
+                delete calls[call.peer];
                 const aud = document.getElementById('aud-' + call.peer);
-                if(aud) aud.remove();
-                renderPeersList();
+                if (aud) aud.remove();
+                renderUserList();
             });
         }
 
-        function renderPeersList() {
+        function updatePeerName(id, name) {
+            if (calls[id]) {
+                calls[id].name = name;
+                renderUserList();
+            }
+        }
+
+        function renderUserList() {
             peersContainer.innerHTML = '';
-            Object.keys(activePeers).forEach(id => {
-                const p = activePeers[id];
+            const activeIds = Object.keys(calls);
+            document.getElementById('userCount').innerText = `${activeIds.length} متصل`;
+
+            activeIds.forEach(id => {
+                const user = calls[id];
                 const div = document.createElement('div');
-                div.className = "flex items-center justify-between bg-slate-900/80 p-4 rounded-xl border border-cyan-500/20 speaking-pulse";
+                div.className = "user-card flex items-center justify-between bg-slate-900/60 p-3 rounded-xl border border-slate-700";
                 div.innerHTML = `
                     <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 bg-cyan-500/10 rounded-full flex items-center justify-center text-cyan-400 border border-cyan-500/30">
-                            <i class="fas fa-microphone-lines"></i>
+                        <div class="w-8 h-8 bg-cyan-500/10 rounded-full flex items-center justify-center text-cyan-400 border border-cyan-500/20">
+                            <i class="fas fa-user text-xs"></i>
                         </div>
-                        <div>
-                            <div class="text-xs font-bold text-white">${p.name}</div>
-                            <div class="text-[9px] text-cyan-500 uppercase tracking-tighter">إشارة نشطة الآن</div>
-                        </div>
+                        <span class="text-xs font-bold">${user.name}</span>
                     </div>
-                    <div class="flex gap-1">
-                        <div class="w-1 h-3 bg-cyan-500 rounded-full animate-bounce" style="animation-delay: 0.1s"></div>
-                        <div class="w-1 h-5 bg-cyan-400 rounded-full animate-bounce" style="animation-delay: 0.2s"></div>
-                        <div class="w-1 h-3 bg-cyan-500 rounded-full animate-bounce" style="animation-delay: 0.3s"></div>
+                    <div class="flex gap-1 items-center">
+                        <span class="text-[8px] text-slate-500 font-mono">${id.split('-').pop()}</span>
+                        <div class="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse ml-2"></div>
                     </div>
                 `;
                 peersContainer.appendChild(div);
@@ -259,20 +263,18 @@
 
         function updateUIStatus(txt, cls, dot) {
             document.getElementById('statusText').innerText = txt;
-            document.getElementById('statusText').className = `font-medium tracking-wide ${cls}`;
+            document.getElementById('statusText').className = `font-medium ${cls}`;
             document.getElementById('statusDot').className = `w-2 h-2 rounded-full ${dot}`;
         }
 
         function stopSystem() {
-            if(scanInterval) clearInterval(scanInterval);
             if(peer) peer.destroy();
             if(myStream) myStream.getTracks().forEach(t => t.stop());
             isConnected = false;
-            activePeers = {};
-            document.getElementById('connectText').innerText = "تشغيل التردد";
-            connectBtn.classList.replace('bg-cyan-900/40', 'bg-slate-700');
-            connectBtn.classList.remove('border-cyan-500');
-            updateUIStatus("تردد متاح", "text-slate-500", "bg-slate-600");
+            calls = {};
+            document.getElementById('connectText').innerText = "دخول التردد";
+            connectBtn.classList.replace('bg-red-900/40', 'bg-slate-700');
+            updateUIStatus("مغلق", "text-slate-500", "bg-slate-600");
             document.getElementById('activeList').classList.add('hidden');
             peersContainer.innerHTML = '';
             audioContainer.innerHTML = '';
@@ -280,7 +282,7 @@
 
         connectBtn.onclick = () => {
             if(!isConnected) {
-                document.getElementById('connectText').innerText = "إغلاق البث";
+                document.getElementById('connectText').innerText = "مغادرة التردد";
                 startSystem();
             } else {
                 stopSystem();
