@@ -3,228 +3,1280 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>راديو الجماعة - اتصال مضمون</title>
+    <title>PlayZone - ملاذ اللاعب الممل</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Tajawal:wght@300;400;500;700;800;900&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { 'tajawal': ['Tajawal', 'sans-serif'] },
+                    colors: {
+                        ps: { blue: '#00439c', dark: '#00073a', light: '#0070d1' },
+                        gaming: { neon: '#00d4ff', purple: '#8b5cf6', pink: '#ec4899', green: '#10b981', orange: '#f59e0b' }
+                    }
+                }
+            }
+        }
+    </script>
     <style>
-        body { background-color: #0b0f1a; color: #f1f5f9; font-family: 'Segoe UI', system-ui, sans-serif; }
-        .frequency-display { text-shadow: 0 0 15px rgba(34, 211, 238, 0.6); font-family: monospace; }
-        .glass { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.05); }
-        .dial-range::-webkit-slider-thumb { -webkit-appearance: none; width: 24px; height: 24px; background: #22d3ee; border-radius: 50%; cursor: pointer; border: 3px solid #0b0f1a; }
-        .status-pulse { animation: pulse 2s infinite; }
-        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        * { font-family: 'Tajawal', sans-serif; }
+        body { background: #0a0a1a; color: #e2e8f0; overflow-x: hidden; }
+        
+        .glow-blue { box-shadow: 0 0 20px rgba(0, 112, 209, 0.5), 0 0 60px rgba(0, 112, 209, 0.2); }
+        .glow-text { text-shadow: 0 0 20px rgba(0, 212, 255, 0.5); }
+        
+        .card-glow:hover { box-shadow: 0 0 30px rgba(0, 112, 209, 0.3); transform: translateY(-4px); }
+        
+        .gradient-border { border: 1px solid transparent; background-clip: padding-box; position: relative; }
+        .gradient-border::before {
+            content: ''; position: absolute; inset: -1px; border-radius: inherit;
+            background: linear-gradient(135deg, #00439c, #8b5cf6, #ec4899);
+            z-index: -1;
+        }
+        
+        @keyframes float { 0%, 100% { transform: translateY(0px); } 50% { transform: translateY(-10px); } }
+        @keyframes pulse-glow { 0%, 100% { box-shadow: 0 0 5px rgba(0,212,255,0.3); } 50% { box-shadow: 0 0 20px rgba(0,212,255,0.6); } }
+        @keyframes slide-up { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes spin-slow { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        @keyframes shimmer { 0% { background-position: -200% center; } 100% { background-position: 200% center; } }
+        @keyframes confetti { 0% { transform: translateY(0) rotate(0deg); opacity: 1; } 100% { transform: translateY(-200px) rotate(720deg); opacity: 0; } }
+        
+        .animate-float { animation: float 3s ease-in-out infinite; }
+        .animate-pulse-glow { animation: pulse-glow 2s ease-in-out infinite; }
+        .animate-slide-up { animation: slide-up 0.6s ease-out; }
+        .animate-spin-slow { animation: spin-slow 8s linear infinite; }
+        
+        .shimmer-text {
+            background: linear-gradient(90deg, #00d4ff, #8b5cf6, #ec4899, #00d4ff);
+            background-size: 200% auto;
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            animation: shimmer 3s linear infinite;
+        }
+        
+        .game-card { transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+        .game-card:hover { transform: scale(1.03) translateY(-5px); }
+        .game-card:hover .game-overlay { opacity: 1; }
+        .game-overlay { opacity: 0; transition: opacity 0.3s; }
+        
+        .nav-link { position: relative; }
+        .nav-link::after { content: ''; position: absolute; bottom: -2px; right: 0; width: 0; height: 2px; background: #00d4ff; transition: width 0.3s; }
+        .nav-link:hover::after, .nav-link.active::after { width: 100%; }
+        
+        .tab-btn.active { background: linear-gradient(135deg, #00439c, #0070d1); color: white; }
+        
+        .mood-card { transition: all 0.3s; cursor: pointer; }
+        .mood-card:hover { transform: scale(1.05); }
+        .mood-card.selected { border-color: #00d4ff; box-shadow: 0 0 20px rgba(0,212,255,0.4); }
+        
+        .achievement { transition: all 0.3s; }
+        .achievement.unlocked { border-color: #10b981; background: rgba(16, 185, 129, 0.1); }
+        .achievement.locked { opacity: 0.5; filter: grayscale(1); }
+        
+        .toast { animation: slide-up 0.4s ease-out; }
+        
+        .particle {
+            position: fixed; pointer-events: none; border-radius: 50%;
+            animation: confetti 1.5s ease-out forwards;
+        }
+        
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #0a0a1a; }
+        ::-webkit-scrollbar-thumb { background: #00439c; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #0070d1; }
+        
+        .section { display: none; }
+        .section.active { display: block; }
+        
+        .ps-btn {
+            background: linear-gradient(135deg, #00439c, #0070d1);
+            transition: all 0.3s;
+        }
+        .ps-btn:hover {
+            background: linear-gradient(135deg, #0070d1, #00d4ff);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(0, 112, 209, 0.4);
+        }
+        
+        .neon-border { border: 1px solid rgba(0, 212, 255, 0.3); }
+        .neon-border:hover { border-color: rgba(0, 212, 255, 0.6); }
+        
+        .stat-card { background: linear-gradient(135deg, rgba(0,67,156,0.2), rgba(139,92,246,0.1)); }
+        
+        .countdown-box {
+            background: rgba(0, 67, 156, 0.2);
+            border: 1px solid rgba(0, 112, 209, 0.3);
+        }
+        
+        #particles-bg { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
+        
+        .reaction-zone { transition: background-color 0.1s; cursor: pointer; user-select: none; }
+        
+        .quiz-option { transition: all 0.3s; }
+        .quiz-option:hover { transform: scale(1.02); border-color: #0070d1; }
+        .quiz-option.correct { border-color: #10b981; background: rgba(16, 185, 129, 0.2); }
+        .quiz-option.wrong { border-color: #ef4444; background: rgba(239, 68, 68, 0.2); }
     </style>
 </head>
-<body class="flex flex-col items-center justify-center min-h-screen p-4 overflow-hidden">
+<body>
+    <canvas id="particles-bg"></canvas>
 
-    <!-- شاشة الدخول -->
-    <div id="loginScreen" class="max-w-md w-full glass rounded-3xl p-8 shadow-2xl z-50 transition-all duration-500">
-        <div class="text-center mb-8">
-            <div class="w-20 h-20 bg-cyan-500/10 rounded-full flex items-center justify-center mx-auto mb-4 border border-cyan-500/30">
-                <i class="fas fa-headset text-3xl text-cyan-400"></i>
+    <!-- Toast Container -->
+    <div id="toast-container" class="fixed top-4 left-1/2 -translate-x-1/2 z-[100] flex flex-col gap-2"></div>
+
+    <!-- Navigation -->
+    <nav class="sticky top-0 z-50 backdrop-blur-xl bg-[#0a0a1a]/80 border-b border-white/10">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-ps-blue to-gaming-purple flex items-center justify-center animate-pulse-glow">
+                        <i data-lucide="gamepad-2" class="w-6 h-6 text-white"></i>
+                    </div>
+                    <span class="text-xl font-bold shimmer-text">PlayZone</span>
+                </div>
+                
+                <div class="hidden md:flex items-center gap-1">
+                    <button onclick="showSection('home')" class="nav-link active px-4 py-2 rounded-lg text-sm font-medium hover:bg-white/5 transition" data-nav="home">
+                        <span>🏠 الرئيسية</span>
+                    </button>
+                    <button onclick="showSection('games')" class="nav-link px-4 py-2 rounded-lg text-sm font-medium hover:bg-white/5 transition" data-nav="games">
+                        <span>🎮 الألعاب</span>
+                    </button>
+                    <button onclick="showSection('minigames')" class="nav-link px-4 py-2 rounded-lg text-sm font-medium hover:bg-white/5 transition" data-nav="minigames">
+                        <span>🎲 ألعاب مصغرة</span>
+                    </button>
+                    <button onclick="showSection('mood')" class="nav-link px-4 py-2 rounded-lg text-sm font-medium hover:bg-white/5 transition" data-nav="mood">
+                        <span>😊 مزاجك</span>
+                    </button>
+                    <button onclick="showSection('achievements')" class="nav-link px-4 py-2 rounded-lg text-sm font-medium hover:bg-white/5 transition" data-nav="achievements">
+                        <span>🏆 إنجازاتي</span>
+                    </button>
+                    <button onclick="showSection('news')" class="nav-link px-4 py-2 rounded-lg text-sm font-medium hover:bg-white/5 transition" data-nav="news">
+                        <span>📰 أخبار</span>
+                    </button>
+                </div>
+
+                <div class="flex items-center gap-3">
+                    <button onclick="toggleSound()" id="sound-btn" class="p-2 rounded-lg hover:bg-white/10 transition">
+                        <i data-lucide="volume-2" class="w-5 h-5"></i>
+                    </button>
+                    <div class="flex items-center gap-2 bg-white/5 rounded-full px-3 py-1.5">
+                        <i data-lucide="trophy" class="w-4 h-4 text-gaming-orange"></i>
+                        <span id="xp-counter" class="text-sm font-bold text-gaming-orange">0</span>
+                        <span class="text-xs text-gray-400">XP</span>
+                    </div>
+                    <button onclick="toggleMobileMenu()" class="md:hidden p-2 rounded-lg hover:bg-white/10">
+                        <i data-lucide="menu" class="w-5 h-5"></i>
+                    </button>
+                </div>
             </div>
-            <h1 class="text-2xl font-bold text-white tracking-wide">راديو الشبكة الذكي</h1>
-            <p class="text-slate-400 text-sm mt-2">نظام الربط التسلسلي المضمون</p>
         </div>
         
-        <div class="space-y-6">
-            <input type="text" id="userNameInput" placeholder="أدخل اسمك المستعار..." 
-                   class="w-full bg-slate-900/80 border border-slate-700 rounded-xl py-4 px-5 text-white outline-none focus:border-cyan-500 transition-all text-center">
-            
-            <button id="startAppBtn" class="w-full bg-cyan-600 hover:bg-cyan-500 py-4 rounded-xl font-bold text-white transition-all transform active:scale-95 shadow-lg shadow-cyan-900/40">
-                فتح الجهاز
-            </button>
-        </div>
-    </div>
-
-    <!-- واجهة الراديو -->
-    <div id="radioInterface" class="max-w-md w-full glass rounded-3xl p-8 shadow-2xl border border-slate-700 relative hidden opacity-0 transition-all duration-500">
-        <header class="flex justify-between items-center mb-6">
-            <div class="flex items-center gap-3">
-                <div class="w-2 h-2 rounded-full bg-green-500 status-pulse"></div>
-                <h1 class="text-lg font-bold text-cyan-400" id="displayMyName">المستخدم</h1>
-            </div>
-            <div class="text-right font-mono text-[10px] text-slate-500">
-                AUTO-SCAN: ACTIVE
-            </div>
-        </header>
-
-        <div class="bg-black/40 rounded-2xl p-6 border border-slate-800 mb-6 text-center">
-            <div class="text-[10px] text-cyan-500 mb-1 font-bold tracking-[0.2em]">FREQ MHZ</div>
-            <input type="number" id="freqInput" step="0.01" min="100" max="999.99" value="440.00" 
-                   class="bg-transparent text-5xl font-bold frequency-display text-cyan-400 w-full text-center outline-none">
-            <div id="connectionStatus" class="mt-3 text-[11px] text-slate-500 font-medium">
-                <i class="fas fa-signal mr-1"></i> <span id="statusText">جاهز للبث</span>
+        <!-- Mobile Menu -->
+        <div id="mobile-menu" class="md:hidden hidden border-t border-white/10 bg-[#0a0a1a]/95 backdrop-blur-xl">
+            <div class="p-4 flex flex-col gap-2">
+                <button onclick="showSection('home');toggleMobileMenu()" class="text-right px-4 py-3 rounded-lg hover:bg-white/5 transition">🏠 الرئيسية</button>
+                <button onclick="showSection('games');toggleMobileMenu()" class="text-right px-4 py-3 rounded-lg hover:bg-white/5 transition">🎮 الألعاب</button>
+                <button onclick="showSection('minigames');toggleMobileMenu()" class="text-right px-4 py-3 rounded-lg hover:bg-white/5 transition">🎲 ألعاب مصغرة</button>
+                <button onclick="showSection('mood');toggleMobileMenu()" class="text-right px-4 py-3 rounded-lg hover:bg-white/5 transition">😊 مزاجك</span></button>
+                <button onclick="showSection('achievements');toggleMobileMenu()" class="text-right px-4 py-3 rounded-lg hover:bg-white/5 transition">🏆 إنجازاتي</button>
+                <button onclick="showSection('news');toggleMobileMenu()" class="text-right px-4 py-3 rounded-lg hover:bg-white/5 transition">📰 أخبار</button>
             </div>
         </div>
+    </nav>
 
-        <div class="space-y-6">
-            <input type="range" id="freqSlider" min="100" max="999.99" step="0.01" value="440.00" class="w-full h-1 bg-slate-700 rounded-lg appearance-none cursor-pointer dial-range">
-            
-            <button id="connectBtn" class="w-full bg-slate-800 border border-slate-700 hover:bg-slate-700 py-5 rounded-2xl font-bold text-lg flex justify-center items-center gap-3 transition-all">
-                <i class="fas fa-power-off text-cyan-500" id="connectIcon"></i>
-                <span id="connectText">دخول القناة</span>
-            </button>
-        </div>
+    <main class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 py-8">
 
-        <div id="activeList" class="mt-8 pt-6 border-t border-slate-800 hidden">
-            <div class="flex justify-between items-center mb-4">
-                <h3 class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">الأعضاء النشطون</h3>
-                <span id="userCount" class="text-[10px] text-cyan-400">0 متصل</span>
+        <!-- ============ HOME SECTION ============ -->
+        <div id="section-home" class="section active">
+            <!-- Hero -->
+            <div class="relative rounded-3xl overflow-hidden mb-10 glow-blue">
+                <div class="absolute inset-0 bg-gradient-to-br from-ps-dark via-ps-blue/50 to-gaming-purple/30"></div>
+                <div class="absolute inset-0 bg-[url('https://picsum.photos/seed/ps5hero/1400/600')] bg-cover bg-center opacity-20"></div>
+                <div class="relative px-8 py-16 md:py-24 text-center">
+                    <div class="animate-float mb-6">
+                        <div class="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-full px-4 py-2 text-sm">
+                            <span class="w-2 h-2 bg-gaming-green rounded-full animate-pulse"></span>
+                            <span>متصل • PSN Online</span>
+                        </div>
+                    </div>
+                    <h1 class="text-4xl md:text-6xl lg:text-7xl font-black mb-4">
+                        <span class="shimmer-text">ملاذ اللاعب الممل</span>
+                    </h1>
+                    <p class="text-lg md:text-xl text-gray-300 mb-8 max-w-2xl mx-auto">اكتشف ألعاب جديدة، العب ألعاب مصغرة، وكسر الملل مع PlayZone! 🎮</p>
+                    <div class="flex flex-wrap justify-center gap-4">
+                        <button onclick="showSection('mood')" class="ps-btn px-8 py-4 rounded-xl text-lg font-bold">
+                            😊 اقترح لي لعبة
+                        </button>
+                        <button onclick="showSection('minigames')" class="px-8 py-4 rounded-xl text-lg font-bold border border-white/20 hover:bg-white/10 transition">
+                            🎲 العب الحين
+                        </button>
+                    </div>
+                </div>
             </div>
-            <div id="peersContainer" class="space-y-2 max-h-40 overflow-y-auto custom-scrollbar"></div>
-        </div>
-    </div>
 
-    <div id="audioContainer"></div>
+            <!-- Quick Stats -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
+                <div class="stat-card rounded-2xl p-5 neon-border text-center">
+                    <div class="text-3xl mb-2">🎮</div>
+                    <div class="text-2xl font-black text-gaming-neon" id="stat-games">48</div>
+                    <div class="text-xs text-gray-400">لعبة متاحة</div>
+                </div>
+                <div class="stat-card rounded-2xl p-5 neon-border text-center">
+                    <div class="text-3xl mb-2">🏆</div>
+                    <div class="text-2xl font-black text-gaming-green" id="stat-achievements">0</div>
+                    <div class="text-xs text-gray-400">إنجاز</div>
+                </div>
+                <div class="stat-card rounded-2xl p-5 neon-border text-center">
+                    <div class="text-3xl mb-2">⭐</div>
+                    <div class="text-2xl font-black text-gaming-orange" id="stat-xp">0</div>
+                    <div class="text-xs text-gray-400">نقطة خبرة</div>
+                </div>
+                <div class="stat-card rounded-2xl p-5 neon-border text-center">
+                    <div class="text-3xl mb-2">🔥</div>
+                    <div class="text-2xl font-black text-gaming-pink" id="stat-streak">0</div>
+                    <div class="text-xs text-gray-400">يوم توالي</div>
+                </div>
+            </div>
+
+            <!-- Countdown for upcoming games -->
+            <div class="mb-10">
+                <h2 class="text-2xl font-bold mb-6 flex items-center gap-2">
+                    <i data-lucide="clock" class="w-6 h-6 text-gaming-neon"></i>
+                    ألعاب قادمة قريباً
+                </h2>
+                <div class="grid md:grid-cols-3 gap-4">
+                    <div class="countdown-box rounded-2xl p-5">
+                        <div class="flex items-center gap-3 mb-3">
+                            <img src="https://picsum.photos/seed/gta6/60/60" class="w-12 h-12 rounded-lg object-cover">
+                            <div>
+                                <div class="font-bold">GTA VI</div>
+                                <div class="text-xs text-gray-400">PS5</div>
+                            </div>
+                        </div>
+                        <div class="flex gap-2 text-center" id="countdown-gta6">
+                            <div class="flex-1 bg-white/5 rounded-lg p-2"><div class="text-lg font-bold text-gaming-neon">--</div><div class="text-[10px] text-gray-500">يوم</div></div>
+                            <div class="flex-1 bg-white/5 rounded-lg p-2"><div class="text-lg font-bold text-gaming-neon">--</div><div class="text-[10px] text-gray-500">ساعة</div></div>
+                            <div class="flex-1 bg-white/5 rounded-lg p-2"><div class="text-lg font-bold text-gaming-neon">--</div><div class="text-[10px] text-gray-500">دقيقة</div></div>
+                            <div class="flex-1 bg-white/5 rounded-lg p-2"><div class="text-lg font-bold text-gaming-neon">--</div><div class="text-[10px] text-gray-500">ثانية</div></div>
+                        </div>
+                    </div>
+                    <div class="countdown-box rounded-2xl p-5">
+                        <div class="flex items-center gap-3 mb-3">
+                            <img src="https://picsum.photos/seed/death2/60/60" class="w-12 h-12 rounded-lg object-cover">
+                            <div>
+                                <div class="font-bold">Death Stranding 2</div>
+                                <div class="text-xs text-gray-400">PS5</div>
+                            </div>
+                        </div>
+                        <div class="flex gap-2 text-center" id="countdown-ds2">
+                            <div class="flex-1 bg-white/5 rounded-lg p-2"><div class="text-lg font-bold text-gaming-purple">--</div><div class="text-[10px] text-gray-500">يوم</div></div>
+                            <div class="flex-1 bg-white/5 rounded-lg p-2"><div class="text-lg font-bold text-gaming-purple">--</div><div class="text-[10px] text-gray-500">ساعة</div></div>
+                            <div class="flex-1 bg-white/5 rounded-lg p-2"><div class="text-lg font-bold text-gaming-purple">--</div><div class="text-[10px] text-gray-500">دقيقة</div></div>
+                            <div class="flex-1 bg-white/5 rounded-lg p-2"><div class="text-lg font-bold text-gaming-purple">--</div><div class="text-[10px] text-gray-500">ثانية</div></div>
+                        </div>
+                    </div>
+                    <div class="countdown-box rounded-2xl p-5">
+                        <div class="flex items-center gap-3 mb-3">
+                            <img src="https://picsum.photos/seed/ghost2/60/60" class="w-12 h-12 rounded-lg object-cover">
+                            <div>
+                                <div class="font-bold">Ghost of Yōtei</div>
+                                <div class="text-xs text-gray-400">PS5</div>
+                            </div>
+                        </div>
+                        <div class="flex gap-2 text-center" id="countdown-ghost2">
+                            <div class="flex-1 bg-white/5 rounded-lg p-2"><div class="text-lg font-bold text-gaming-pink">--</div><div class="text-[10px] text-gray-500">يوم</div></div>
+                            <div class="flex-1 bg-white/5 rounded-lg p-2"><div class="text-lg font-bold text-gaming-pink">--</div><div class="text-[10px] text-gray-500">ساعة</div></div>
+                            <div class="flex-1 bg-white/5 rounded-lg p-2"><div class="text-lg font-bold text-gaming-pink">--</div><div class="text-[10px] text-gray-500">دقيقة</div></div>
+                            <div class="flex-1 bg-white/5 rounded-lg p-2"><div class="text-lg font-bold text-gaming-pink">--</div><div class="text-[10px] text-gray-500">ثانية</div></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
+                <button onclick="randomGame()" class="bg-gradient-to-br from-gaming-purple/20 to-gaming-pink/20 border border-gaming-purple/30 rounded-2xl p-6 text-center hover:border-gaming-purple/60 transition group">
+                    <div class="text-4xl mb-3 group-hover:scale-110 transition">🎲</div>
+                    <div class="font-bold text-sm">لعبة عشوائية</div>
+                </button>
+                <button onclick="showSection('minigames')" class="bg-gradient-to-br from-gaming-neon/20 to-ps-light/20 border border-gaming-neon/30 rounded-2xl p-6 text-center hover:border-gaming-neon/60 transition group">
+                    <div class="text-4xl mb-3 group-hover:scale-110 transition">⚡</div>
+                    <div class="font-bold text-sm">اختبار سرعة</div>
+                </button>
+                <button onclick="showSection('mood')" class="bg-gradient-to-br from-gaming-green/20 to-gaming-neon/20 border border-gaming-green/30 rounded-2xl p-6 text-center hover:border-gaming-green/60 transition group">
+                    <div class="text-4xl mb-3 group-hover:scale-110 transition">🧠</div>
+                    <div class="font-bold text-sm">اقتراح ذكي</div>
+                </button>
+                <button onclick="showSection('achievements')" class="bg-gradient-to-br from-gaming-orange/20 to-gaming-pink/20 border border-gaming-orange/30 rounded-2xl p-6 text-center hover:border-gaming-orange/60 transition group">
+                    <div class="text-4xl mb-3 group-hover:scale-110 transition">🏅</div>
+                    <div class="font-bold text-sm">إنجازاتي</div>
+                </button>
+            </div>
+
+            <!-- Fun Fact Ticker -->
+            <div class="bg-white/5 rounded-2xl p-4 flex items-center gap-3 neon-border">
+                <div class="flex-shrink-0 bg-gaming-purple/20 rounded-lg p-2">
+                    <i data-lucide="lightbulb" class="w-5 h-5 text-gaming-orange"></i>
+                </div>
+                <div class="overflow-hidden flex-1">
+                    <p id="fun-fact" class="text-sm text-gray-300 animate-slide-up">هل تعرف؟ أول لعبة PlayStation تم إصدارها كانت Crash Bandicoot في 1996!</p>
+                </div>
+                <button onclick="nextFunFact()" class="flex-shrink-0 text-xs text-gaming-neon hover:underline">التالي ←</button>
+            </div>
+        </div>
+
+        <!-- ============ GAMES SECTION ============ -->
+        <div id="section-games" class="section">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+                <div>
+                    <h2 class="text-3xl font-black mb-1">🎮 كاتالوج الألعاب</h2>
+                    <p class="text-gray-400 text-sm">تصفح أفضل ألعاب PS4 و PS5</p>
+                </div>
+                <div class="flex items-center gap-3">
+                    <div class="relative">
+                        <i data-lucide="search" class="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                        <input type="text" id="game-search" oninput="filterGames()" placeholder="ابحث عن لعبة..." class="bg-white/5 border border-white/10 rounded-xl pr-10 pl-4 py-2.5 text-sm focus:border-gaming-neon focus:outline-none transition w-48 md:w-64">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Filters -->
+            <div class="flex flex-wrap gap-2 mb-6">
+                <button onclick="setFilter('all')" class="tab-btn active px-4 py-2 rounded-lg text-sm font-medium bg-white/5 hover:bg-white/10 transition" data-filter="all">الكل</button>
+                <button onclick="setFilter('ps5')" class="tab-btn px-4 py-2 rounded-lg text-sm font-medium bg-white/5 hover:bg-white/10 transition" data-filter="ps5">PS5</button>
+                <button onclick="setFilter('ps4')" class="tab-btn px-4 py-2 rounded-lg text-sm font-medium bg-white/5 hover:bg-white/10 transition" data-filter="ps4">PS4</button>
+                <button onclick="setFilter('action')" class="tab-btn px-4 py-2 rounded-lg text-sm font-medium bg-white/5 hover:bg-white/10 transition" data-filter="action">أكشن</button>
+                <button onclick="setFilter('rpg')" class="tab-btn px-4 py-2 rounded-lg text-sm font-medium bg-white/5 hover:bg-white/10 transition" data-filter="rpg">RPG</button>
+                <button onclick="setFilter('adventure')" class="tab-btn px-4 py-2 rounded-lg text-sm font-medium bg-white/5 hover:bg-white/10 transition" data-filter="adventure">مغامرة</button>
+                <button onclick="setFilter('sports')" class="tab-btn px-4 py-2 rounded-lg text-sm font-medium bg-white/5 hover:bg-white/10 transition" data-filter="sports">رياضة</button>
+                <button onclick="setFilter('horror')" class="tab-btn px-4 py-2 rounded-lg text-sm font-medium bg-white/5 hover:bg-white/10 transition" data-filter="horror">رعب</button>
+                <button onclick="setFilter('racing')" class="tab-btn px-4 py-2 rounded-lg text-sm font-medium bg-white/5 hover:bg-white/10 transition" data-filter="racing">سباق</button>
+            </div>
+
+            <!-- Games Grid -->
+            <div id="games-grid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                <!-- Populated by JS -->
+            </div>
+
+            <!-- Random Game Modal -->
+            <div id="random-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/70 backdrop-blur-sm">
+                <div class="bg-[#12122a] rounded-3xl p-8 max-w-md mx-4 text-center border border-white/10 animate-slide-up">
+                    <div class="text-5xl mb-4">🎲</div>
+                    <h3 class="text-2xl font-bold mb-2">لعبتك العشوائية</h3>
+                    <div id="random-game-result" class="my-6"></div>
+                    <div class="flex gap-3 justify-center">
+                        <button onclick="randomGame()" class="ps-btn px-6 py-3 rounded-xl font-bold">🎲 مرة أخرى</button>
+                        <button onclick="closeRandomModal()" class="px-6 py-3 rounded-xl border border-white/20 hover:bg-white/10 transition">إغلاق</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ============ MINI GAMES SECTION ============ -->
+        <div id="section-minigames" class="section">
+            <h2 class="text-3xl font-black mb-2">🎲 ألعاب مصغرة</h2>
+            <p class="text-gray-400 text-sm mb-8">العاب سريعة تكسر الملل فوراً!</p>
+
+            <div class="grid md:grid-cols-2 gap-6">
+                <!-- Reaction Game -->
+                <div class="bg-white/5 rounded-2xl p-6 neon-border">
+                    <div class="flex items-center gap-3 mb-4">
+                        <div class="bg-gaming-neon/20 rounded-lg p-2"><i data-lucide="zap" class="w-5 h-5 text-gaming-neon"></i></div>
+                        <div>
+                            <h3 class="font-bold text-lg">اختبار سرعة رد الفعل</h3>
+                            <p class="text-xs text-gray-400">اضغط أسرع ما يمكن عندما يتحول اللون</p>
+                        </div>
+                    </div>
+                    <div id="reaction-zone" class="reaction-zone rounded-xl h-48 flex items-center justify-center bg-red-500/20 border-2 border-red-500/40 mb-4" onclick="reactionClick()">
+                        <div id="reaction-text" class="text-center">
+                            <div class="text-2xl font-bold">اضغط للبدء</div>
+                            <div class="text-sm text-gray-400 mt-1">اختسر سرعة ردة فعلك!</div>
+                        </div>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <div class="text-sm">
+                            أفضل وقت: <span id="best-reaction" class="font-bold text-gaming-neon">--</span>ms
+                        </div>
+                        <div class="text-sm">
+                            محاولات: <span id="reaction-attempts" class="font-bold">0</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Guess the Game -->
+                <div class="bg-white/5 rounded-2xl p-6 neon-border">
+                    <div class="flex items-center gap-3 mb-4">
+                        <div class="bg-gaming-purple/20 rounded-lg p-2"><i data-lucide="help-circle" class="w-5 h-5 text-gaming-purple"></i></div>
+                        <div>
+                            <h3 class="font-bold text-lg">خمّن اللعبة</h3>
+                            <p class="text-xs text-gray-400">من خلال الوصف، ما هي اللعبة؟</p>
+                        </div>
+                    </div>
+                    <div id="quiz-area">
+                        <div id="quiz-question" class="bg-white/5 rounded-xl p-4 mb-4 text-center">
+                            <div class="text-sm text-gray-400 mb-2">السؤال <span id="quiz-num">1</span> من <span id="quiz-total">5</span></div>
+                            <p id="quiz-desc" class="text-lg font-medium">اضغط "ابدأ" لبدء التحدي!</p>
+                        </div>
+                        <div id="quiz-options" class="grid grid-cols-1 gap-2 mb-4"></div>
+                        <div class="flex items-center justify-between">
+                            <div class="text-sm">
+                                النتيجة: <span id="quiz-score" class="font-bold text-gaming-green">0</span>/<span id="quiz-total2">5</span>
+                            </div>
+                            <button onclick="startQuiz()" class="ps-btn px-4 py-2 rounded-lg text-sm font-bold">ابدأ 🎯</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Memory Game -->
+                <div class="bg-white/5 rounded-2xl p-6 neon-border">
+                    <div class="flex items-center gap-3 mb-4">
+                        <div class="bg-gaming-pink/20 rounded-lg p-2"><i data-lucide="brain" class="w-5 h-5 text-gaming-pink"></i></div>
+                        <div>
+                            <h3 class="font-bold text-lg">لعبة الذاكرة</h3>
+                            <p class="text-xs text-gray-400">تذكر مواقع البطاقات المتطابقة</p>
+                        </div>
+                    </div>
+                    <div id="memory-grid" class="grid grid-cols-4 gap-2 mb-4"></div>
+                    <div class="flex items-center justify-between">
+                        <div class="text-sm">
+                            الحركات: <span id="memory-moves" class="font-bold text-gaming-pink">0</span>
+                        </div>
+                        <button onclick="initMemoryGame()" class="ps-btn px-4 py-2 rounded-lg text-sm font-bold">لعبة جديدة 🔄</button>
+                    </div>
+                </div>
+
+                <!-- Number Guessing -->
+                <div class="bg-white/5 rounded-2xl p-6 neon-border">
+                    <div class="flex items-center gap-3 mb-4">
+                        <div class="bg-gaming-orange/20 rounded-lg p-2"><i data-lucide="hash" class="w-5 h-5 text-gaming-orange"></i></div>
+                        <div>
+                            <h3 class="font-bold text-lg">خمّن الرقم</h3>
+                            <p class="text-xs text-gray-400">رقم سري بين 1 و 100</p>
+                        </div>
+                    </div>
+                    <div class="text-center mb-4">
+                        <div id="number-hint" class="text-4xl font-black mb-2">🤔</div>
+                        <p id="number-message" class="text-sm text-gray-400">خمّن رقماً بين 1 و 100</p>
+                    </div>
+                    <div class="flex gap-2 mb-4">
+                        <input type="number" id="number-guess" min="1" max="100" placeholder="رقمك..." class="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-center text-lg font-bold focus:border-gaming-orange focus:outline-none" onkeypress="if(event.key==='Enter')checkNumber()">
+                        <button onclick="checkNumber()" class="ps-btn px-6 py-3 rounded-xl font-bold">تحقق!</button>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <div class="text-sm">
+                            محاولات: <span id="number-attempts" class="font-bold text-gaming-orange">0</span>
+                        </div>
+                        <button onclick="resetNumberGame()" class="text-xs text-gaming-neon hover:underline">لعبة جديدة</button>
+                    </div>
+                </div>
+
+                <!-- Click Speed Test -->
+                <div class="bg-white/5 rounded-2xl p-6 neon-border md:col-span-2">
+                    <div class="flex items-center gap-3 mb-4">
+                        <div class="bg-gaming-green/20 rounded-lg p-2"><i data-lucide="mouse-pointer-click" class="w-5 h-5 text-gaming-green"></i></div>
+                        <div>
+                            <h3 class="font-bold text-lg">تحدي النقر - كم ضغطة في 10 ثواني؟</h3>
+                            <p class="text-xs text-gray-400">اضغط بأسرع ما يمكن!</p>
+                        </div>
+                    </div>
+                    <div class="flex flex-col items-center">
+                        <div id="click-count" class="text-6xl font-black text-gaming-green mb-2">0</div>
+                        <div id="click-timer" class="text-sm text-gray-400 mb-4">اضغط للبدء</div>
+                        <button id="click-btn" onclick="clickTest()" class="w-40 h-40 rounded-full bg-gradient-to-br from-gaming-green/30 to-gaming-neon/30 border-2 border-gaming-green/50 text-4xl font-black hover:scale-105 active:scale-95 transition-transform select-none">
+                            👆
+                        </button>
+                        <div class="mt-4 text-sm">
+                            أفضل نتيجة: <span id="best-click" class="font-bold text-gaming-green">0</span> نقرة
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ============ MOOD SECTION ============ -->
+        <div id="section-mood" class="section">
+            <h2 class="text-3xl font-black mb-2">😊 كيف مزاجك؟</h2>
+            <p class="text-gray-400 text-sm mb-8">اختر مزاجك ونسقترح لك ألعاب مناسبة!</p>
+
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
+                <div onclick="selectMood('action')" class="mood-card bg-white/5 border border-white/10 rounded-2xl p-6 text-center">
+                    <div class="text-5xl mb-3">😤</div>
+                    <div class="font-bold">متحمس</div>
+                    <div class="text-xs text-gray-400 mt-1">أريد أكشن!</div>
+                </div>
+                <div onclick="selectMood('relax')" class="mood-card bg-white/5 border border-white/10 rounded-2xl p-6 text-center">
+                    <div class="text-5xl mb-3">😌</div>
+                    <div class="font-bold">هادي</div>
+                    <div class="text-xs text-gray-400 mt-1">أريد استرخاء</div>
+                </div>
+                <div onclick="selectMood('scared')" class="mood-card bg-white/5 border border-white/10 rounded-2xl p-6 text-center">
+                    <div class="text-5xl mb-3">😨</div>
+                    <div class="font-bold">جرئ</div>
+                    <div class="text-xs text-gray-400 mt-1">أريد رعب!</div>
+                </div>
+                <div onclick="selectMood('social')" class="mood-card bg-white/5 border border-white/10 rounded-2xl p-6 text-center">
+                    <div class="text-5xl mb-3">🤝</div>
+                    <div class="font-bold">اجتماعي</div>
+                    <div class="text-xs text-gray-400 mt-1">أريد لعب مع أصدقاء</div>
+                </div>
+                <div onclick="selectMood('think')" class="mood-card bg-white/5 border border-white/10 rounded-2xl p-6 text-center">
+                    <div class="text-5xl mb-3">🤔</div>
+                    <div class="font-bold">مفكر</div>
+                    <div class="text-xs text-gray-400 mt-1">أحل مشاكل وألغاز</div>
+                </div>
+                <div onclick="selectMood('speed')" class="mood-card bg-white/5 border border-white/10 rounded-2xl p-6 text-center">
+                    <div class="text-5xl mb-3">🏎️</div>
+                    <div class="font-bold">سريع</div>
+                    <div class="text-xs text-gray-400 mt-1">سباقات وأدرينالين</div>
+                </div>
+                <div onclick="selectMood('story')" class="mood-card bg-white/5 border border-white/10 rounded-2xl p-6 text-center">
+                    <div class="text-5xl mb-3">📖</div>
+                    <div class="font-bold">قصصي</div>
+                    <div class="text-xs text-gray-400 mt-1">أريد قصة ملحمية</div>
+                </div>
+                <div onclick="selectMood('bored')" class="mood-card bg-white/5 border border-white/10 rounded-2xl p-6 text-center">
+                    <div class="text-5xl mb-3">🥱</div>
+                    <div class="font-bold">ممل</div>
+                    <div class="text-xs text-gray-400 mt-1">فاضي خلني ألعب أي شيء</div>
+                </div>
+            </div>
+
+            <div id="mood-results" class="hidden">
+                <h3 class="text-xl font-bold mb-4 flex items-center gap-2">
+                    <span id="mood-emoji"></span>
+                    <span id="mood-title">اقتراحات لك</span>
+                </h3>
+                <div id="mood-games" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"></div>
+            </div>
+        </div>
+
+        <!-- ============ ACHIEVEMENTS SECTION ============ -->
+        <div id="section-achievements" class="section">
+            <h2 class="text-3xl font-black mb-2">🏆 إنجازاتي</h2>
+            <p class="text-gray-400 text-sm mb-8">اجمع إنجازات واحصل على XP!</p>
+
+            <!-- Level Progress -->
+            <div class="bg-white/5 rounded-2xl p-6 neon-border mb-8">
+                <div class="flex items-center justify-between mb-3">
+                    <div class="flex items-center gap-3">
+                        <div class="w-14 h-14 rounded-full bg-gradient-to-br from-gaming-orange to-gaming-pink flex items-center justify-center text-2xl font-black" id="level-num">1</div>
+                        <div>
+                            <div class="font-bold text-lg">المستوى <span id="level-text">1</span></div>
+                            <div class="text-xs text-gray-400">لاعب مبتدئ</div>
+                        </div>
+                    </div>
+                    <div class="text-left">
+                        <div class="text-sm text-gaming-orange font-bold"><span id="current-xp">0</span> / <span id="next-level-xp">100</span> XP</div>
+                    </div>
+                </div>
+                <div class="w-full h-3 bg-white/10 rounded-full overflow-hidden">
+                    <div id="xp-bar" class="h-full bg-gradient-to-l from-gaming-orange to-gaming-pink rounded-full transition-all duration-500" style="width: 0%"></div>
+                </div>
+            </div>
+
+            <!-- Achievements Grid -->
+            <div id="achievements-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- Populated by JS -->
+            </div>
+        </div>
+
+        <!-- ============ NEWS SECTION ============ -->
+        <div id="section-news" class="section">
+            <h2 class="text-3xl font-black mb-2">📰 أخبار الألعاب</h2>
+            <p class="text-gray-400 text-sm mb-8">آخر الأخبار من عالم PlayStation</p>
+
+            <div id="news-grid" class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Populated by JS -->
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="relative z-10 border-t border-white/10 mt-16">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 py-8 text-center">
+            <div class="flex items-center justify-center gap-2 mb-3">
+                <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-ps-blue to-gaming-purple flex items-center justify-center">
+                    <i data-lucide="gamepad-2" class="w-4 h-4 text-white"></i>
+                </div>
+                <span class="font-bold shimmer-text">PlayZone</span>
+            </div>
+            <p class="text-xs text-gray-500">ملاذ اللاعب الممل • صُنع بـ ❤️ للاعبين</p>
+        </div>
+    </footer>
 
     <script>
-        const loginScreen = document.getElementById('loginScreen');
-        const radioInterface = document.getElementById('radioInterface');
-        const freqInput = document.getElementById('freqInput');
-        const freqSlider = document.getElementById('freqSlider');
-        const connectBtn = document.getElementById('connectBtn');
-        const peersContainer = document.getElementById('peersContainer');
-        const audioContainer = document.getElementById('audioContainer');
+        // ===== DATA =====
+        const gamesDB = [
+            { name: "God of War Ragnarök", platform: "ps5", genre: "action", rating: 9.5, img: "gowr", mood: ["action","story"], desc: "مغامرة ملحمية مع كراتوس وأتريوس" },
+            { name: "Spider-Man 2", platform: "ps5", genre: "action", rating: 9.0, img: "spider2", mood: ["action","story"], desc: "إنسان العنكبوت بأقوى نسخة" },
+            { name: "Horizon Forbidden West", platform: "ps5", genre: "adventure", rating: 8.8, img: "horizon2", mood: ["action","story","relax"], desc: "عالم مفتوح مع آليات عملاقة" },
+            { name: "The Last of Us Part II", platform: "ps4", genre: "action", rating: 9.3, img: "tlou2", mood: ["action","story","scared"], desc: "قصة انتقام مؤثرة" },
+            { name: "Ghost of Tsushima", platform: "ps4", genre: "action", rating: 9.2, img: "ghost", mood: ["action","story","relax"], desc: "ساموراي في جزيرة تسوشيما" },
+            { name: "Final Fantasy XVI", platform: "ps5", genre: "rpg", rating: 8.7, img: "ff16", mood: ["action","story"], desc: "حرب وسيوف وأيقونات استدعاء" },
+            { name: "Baldur's Gate 3", platform: "ps5", genre: "rpg", rating: 9.6, img: "bg3", mood: ["think","story"], desc: "RPG بالأدوار الكلاسيكي" },
+            { name: "Resident Evil 4 Remake", platform: "ps5", genre: "horror", rating: 9.0, img: "re4", mood: ["scared","action"], desc: "رعب البقاء الكلاسيكي" },
+            { name: "Elden Ring", platform: "ps5", genre: "rpg", rating: 9.5, img: "elden", mood: ["action","think"], desc: "عالم مظلم صعب ملحمي" },
+            { name: "Gran Turismo 7", platform: "ps5", genre: "racing", rating: 8.5, img: "gt7", mood: ["speed","relax"], desc: "محاكاة سباقات واقعية" },
+            { name: "FIFA 24", platform: "ps5", genre: "sports", rating: 7.5, img: "fifa24", mood: ["social","speed"], desc: "كرة القدم مع أصدقائك" },
+            { name: "Uncharted 4", platform: "ps4", genre: "adventure", rating: 9.3, img: "uncharted4", mood: ["story","action"], desc: "آخر مغامرات ناثان دريك" },
+            { name: "Bloodborne", platform: "ps4", genre: "rpg", rating: 9.1, img: "blood", mood: ["scared","action","think"], desc: "رعب وأكشن من FromSoftware" },
+            { name: "Ratchet & Clank: Rift Apart", platform: "ps5", genre: "adventure", rating: 8.5, img: "ratchet", mood: ["relax","action"], desc: "مغامرة مرحبة بين الأبعاد" },
+            { name: "Demon's Souls", platform: "ps5", genre: "rpg", rating: 8.9, img: "demon", mood: ["action","think","scared"], desc: "النسخة المعاد بناؤها" },
+            { name: "Returnal", platform: "ps5", genre: "action", rating: 8.3, img: "returnal", mood: ["action","scared"], desc: "روغلايك sci-fi مرعب" },
+            { name: "Sackboy: A Big Adventure", platform: "ps5", genre: "adventure", rating: 7.8, img: "sackboy", mood: ["relax","social"], desc: "منصة مرح مع أصدقاء" },
+            { name: "It Takes Two", platform: "ps5", genre: "adventure", rating: 9.0, img: "ittakes2", mood: ["social","story","relax"], desc: "تعاوني ممتع للاعبين" },
+            { name: "MLB The Show 24", platform: "ps5", genre: "sports", rating: 7.5, img: "mlb24", mood: ["sports","social"], desc: "بيسبول أمريكي" },
+            { name: "Alan Wake 2", platform: "ps5", genre: "horror", rating: 9.0, img: "alan2", mood: ["scared","story","think"], desc: "رعب نفسي ملحمي" },
+            { name: "Persona 5 Royal", platform: "ps4", genre: "rpg", rating: 9.5, img: "persona5", mood: ["story","think","relax"], desc: "JRPG أسطوري" },
+            { name: "Crash Bandicoot 4", platform: "ps4", genre: "adventure", rating: 8.2, img: "crash4", mood: ["action","relax"], desc: "عودة كراش الكلاسيكية" },
+            { name: "Need for Speed Unbound", platform: "ps5", genre: "racing", rating: 7.5, img: "nfs", mood: ["speed","action"], desc: "سباق شوارع بستايل" },
+            { name: "Hogwarts Legacy", platform: "ps5", genre: "rpg", rating: 8.5, img: "hogwarts", mood: ["story","think","relax"], desc: "عالم هاري بوتر" },
+            { name: "Stellar Blade", platform: "ps5", genre: "action", rating: 8.3, img: "stellar", mood: ["action"], desc: "أكشن كوري ملحمي" },
+            { name: "Rise of the Ronin", platform: "ps5", genre: "action", rating: 7.8, img: "ronin", mood: ["action","story"], desc: "يابان الساموراي المفتوح" },
+            { name: "Helldivers 2", platform: "ps5", genre: "action", rating: 8.7, img: "helldivers2", mood: ["social","action"], desc: "تعاوني مع أصدقاء" },
+            { name: "Tekken 8", platform: "ps5", genre: "action", rating: 8.5, img: "tekken8", mood: ["social","action","speed"], desc: "قتال مع أصدقاء" },
+            { name: "FC 25", platform: "ps5", genre: "sports", rating: 7.8, img: "fc25", mood: ["social","speed"], desc: "كرة القدم الجديدة" },
+            { name: "Dragon's Dogma 2", platform: "ps5", genre: "rpg", rating: 8.4, img: "dd2", mood: ["action","think","story"], desc: "RPG عالم مفتوح" },
+            { name: "Astro Bot", platform: "ps5", genre: "adventure", rating: 9.2, img: "astro", mood: ["relax","action"], desc: "منصة ممتعة لكل الأعمار" },
+            { name: "Silent Hill 2 Remake", platform: "ps5", genre: "horror", rating: 9.0, img: "sh2", mood: ["scared","story"], desc: "عودة الرعب الكلاسيكي" },
+            { name: "Black Myth: Wukong", platform: "ps5", genre: "action", rating: 9.3, img: "wukong", mood: ["action","story","think"], desc: "أسطورة القرد الصيني" },
+            { name: "Diablo IV", platform: "ps5", genre: "rpg", rating: 8.2, img: "diablo4", mood: ["action","think"], desc: "هاك أند سلاش ملحمي" },
+            { name: "Assassin's Creed Shadows", platform: "ps5", genre: "action", rating: 8.0, img: "acshadows", mood: ["action","story"], desc: "اليابان الإقطاعية" },
+            { name: "The Witcher 3", platform: "ps4", genre: "rpg", rating: 9.6, img: "witcher3", mood: ["story","think","action"], desc: "تحفة RPG خالدة" },
+            { name: "Until Dawn", platform: "ps4", genre: "horror", rating: 8.0, img: "untildawn", mood: ["scared","story"], desc: "رعب تفاعلي بقراراتك" },
+            { name: "Overcooked! All You Can Eat", platform: "ps5", genre: "adventure", rating: 8.3, img: "overcooked", mood: ["social","relax"], desc: "طبخ تعاوني فوضوي" },
+            { name: "Minecraft", platform: "ps4", genre: "adventure", rating: 9.0, img: "minecraft", mood: ["relax","think","social"], desc: "ابني عالمك الخاص" },
+            { name: "The Forest", platform: "ps4", genre: "horror", rating: 8.2, img: "forest", mood: ["scared","think","social"], desc: "بقاء في غابة مرعبة" },
+            { name: "Hades", platform: "ps5", genre: "action", rating: 9.2, img: "hades", mood: ["action","think"], desc: "روغلايك إغريقي" },
+            { name: "Deathloop", platform: "ps5", genre: "action", rating: 8.4, img: "deathloop", mood: ["action","think"], desc: "حلقة زمنية غامضة" },
+            { name: "Disco Elysium", platform: "ps5", genre: "rpg", rating: 9.4, img: "disco", mood: ["think","story"], desc: "RPG محادثات فريدة" },
+            { name: "Little Nightmares II", platform: "ps4", genre: "horror", rating: 8.3, img: "ln2", mood: ["scared","think"], desc: "رعب أجواء غريبة" },
+            { name: "Sifu", platform: "ps5", genre: "action", rating: 8.0, img: "sifu", mood: ["action","think"], desc: "كونغ فو تحدي صعب" },
+            { name: "Deep Rock Galactic", platform: "ps5", genre: "action", rating: 8.5, img: "drg", mood: ["social","action"], desc: "تعدين تعاوني ممتع" },
+            { name: "Subnautica", platform: "ps4", genre: "adventure", rating: 8.6, img: "subnautica", mood: ["relax","scared","think"], desc: "استكشاف أعماق المحيط" },
+            { name: "Firewatch", platform: "ps4", genre: "adventure", rating: 8.4, img: "firewatch", mood: ["relax","story"], desc: "مغامرة هادئة وجميلة" },
+        ];
 
-        let myUsername = "";
-        let peer = null;
-        let myStream = null;
-        let isConnected = false;
-        let mySeat = 1;
-        let activeCalls = {};
+        const achievementsDB = [
+            { id: "first_visit", name: "الخطوة الأولى", desc: "زرت PlayZone لأول مرة", xp: 10, icon: "👣" },
+            { id: "game_browser", name: "مستكشف الألعاب", desc: "تصفح كاتالوج الألعاب", xp: 15, icon: "🔍" },
+            { id: "reaction_5", name: "يد خفيفة", desc: "حققت أقل من 300ms في اختبار رد الفعل", xp: 30, icon: "⚡" },
+            { id: "quiz_perfect", name: "خبير الألعاب", desc: "أجبت على كل أسئلة الاختبار صح", xp: 50, icon: "🧠" },
+            { id: "memory_win", name: "ذاكرة حديدية", desc: "أكملت لعبة الذاكرة", xp: 25, icon: "🧩" },
+            { id: "number_found", name: "الرقم السري", desc: "خمّنت الرقم الصحيح", xp: 20, icon: "🔢" },
+            { id: "click_50", name: "أصابع سريعة", desc: "50 نقرة في 10 ثواني", xp: 30, icon: "👆" },
+            { id: "mood_picker", name: "عارف نفسك", desc: "اخترت مزاجك", xp: 10, icon: "😊" },
+            { id: "random_game", name: "مغامر", desc: "طلبت لعبة عشوائية", xp: 10, icon: "🎲" },
+            { id: "all_sections", name: "مستكشف كامل", desc: "زرت كل الأقسام", xp: 50, icon: "🗺️" },
+            { id: "streak_3", name: "متواصل", desc: "زرت 3 أيام متتالية", xp: 40, icon: "🔥" },
+            { id: "news_reader", name: "قارئ الأخبار", desc: "قرأت قسم الأخبار", xp: 10, icon: "📰" },
+        ];
 
-        document.getElementById('startAppBtn').onclick = () => {
-            myUsername = document.getElementById('userNameInput').value.trim() || "مجهول";
-            document.getElementById('displayMyName').innerText = myUsername;
-            loginScreen.classList.add('hidden');
-            radioInterface.classList.remove('hidden');
-            setTimeout(() => radioInterface.classList.remove('opacity-0'), 50);
-        };
+        const funFacts = [
+            "هل تعرف؟ أول لعبة PlayStation تم إصدارها كانت Crash Bandicoot في 1996!",
+            "PS2 هي أكثر جهاز ألعاب مبيعاً في التاريخ بأكثر من 155 مليون وحدة!",
+            "God of War (2018) تم تطويره في 5 سنوات فقط من فريق من 200 شخص!",
+            "الخلفية الصوتية لـ PlayStation الأيقونية تم تأليفها في عام 1994!",
+            "Spider-Man PS4 باعت أكثر من 13 مليون نسخة!",
+            "The Last of Us Part II فازت بأكثر من 300 جائزة!",
+            "Elden Ring تم تطويره بالتعاون مع جورج آر آر مارتن!",
+            "Ghost of Tsshima كان مشروع خريج قبل أن يصبح لعبة حقيقية!",
+            "PS5 يمكنه تحميل لعبة بحجم 50GB في أقل من دقيقة مع SSD!",
+            "DualSense يحتوي على محركين هابتيك مختلفين للملاحظة اللمسية!",
+            "Final Fantasy كانت آخر فرقة لـ Square قبل الإفلاس، ونجحت!",
+            "Persona 5 استغرق تطويره أكثر من 5 سنوات!",
+        ];
 
-        freqSlider.oninput = () => { freqInput.value = parseFloat(freqSlider.value).toFixed(2); if(isConnected) stopSystem(); };
-        freqInput.onchange = () => { 
-            let v = Math.min(Math.max(parseFloat(freqInput.value)||100, 100), 999.99); 
-            freqInput.value = v.toFixed(2); freqSlider.value = v; 
-            if(isConnected) stopSystem(); 
-        };
+        const newsData = [
+            { title: "GTA VI: كل ما نعرفه حتى الآن", cat: "PS5", time: "منذ ساعة", img: "newsgta6", desc: "روكستار تكشف تفاصيل جديدة عن اللعبة الأكثر انتظاراً في التاريخ..." },
+            { title: "PlayStation Plus: ألعاب يناير 2025", cat: "أخبار", time: "منذ 3 ساعات", img: "newspsplus", desc: "ألعاب مجانية جديدة لمشتركي PS Plus هذا الشهر..." },
+            { title: "Black Myth: Wukong يكسر أرقام المبيعات", cat: "PS5", time: "منذ 5 ساعات", img: "newswukong", desc: "اللعبة الصينية تتجاوز 20 مليون نسخة مباعة..." },
+            { title: "تحديث ضخم لـ Helldivers 2", cat: "تحديث", time: "منذ يوم", img: "newshd2", desc: "محتوى جديد يشمل أسلحة وعEnemies ومهمات..." },
+            { title: "Sony تعلن عن PS5 Pro", cat: "أجهزة", time: "منذ يومين", img: "newsps5pro", desc: "نسخة محسنة مع أداء أفضل وتقنية ray tracing متقدمة..." },
+            { title: "Ghost of Yōtei: تاريخ الإصدار الرسمي", cat: "PS5", time: "منذ 3 أيام", img: "newsgy", desc: "Sucker Punch تعلن عن موعد إطلاق اللعبة الجديدة..." },
+        ];
 
-        async function startSystem() {
-            try {
-                myStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                tryConnect(1); // البدء بمحاولة حجز المقعد رقم 1
-            } catch (err) {
-                alert("يرجى تفعيل الميكروفون.");
-                stopSystem();
+        const quizQuestions = [
+            { desc: "ساموراي يقاتل الغزو المغولي في جزيرة يابانية", answer: "Ghost of Tsushima", options: ["Ghost of Tsushima", "Sekiro", "Nioh 2", "Rise of the Ronin"] },
+            { desc: "إله الحرب يعبر الأساطير الإسكندنافية مع ابنه", answer: "God of War Ragnarök", options: ["God of War Ragnarök", "Assassin's Creed Valhalla", "Hellblade II", "Elden Ring"] },
+            { desc: "بقاء في عالم ما بعد نهاية العالم مع فطر يصيب البشر", answer: "The Last of Us", options: ["The Last of Us", "Days Gone", "Resident Evil", "Death Stranding"] },
+            { desc: "سبايدرمان يتأرجح بين ناطحات مانهاتن", answer: "Spider-Man 2", options: ["Spider-Man 2", "Batman Arkham", "Infamous", "Prototype"] },
+            { desc: "عالم مفتوح مظلم صعب من شركة FromSoftware", answer: "Elden Ring", options: ["Elden Ring", "Dark Souls III", "Bloodborne", "Demon's Souls"] },
+            { desc: "صيادة آليات ديناصور عملاقة في عالم ما بعد الكارثة", answer: "Horizon Forbidden West", options: ["Horizon Forbidden West", "Tomb Raider", "Far Cry 6", "Metro Exodus"] },
+            { desc: "ساحر يتعلم السحر في مدرسة هوغوورتس", answer: "Hogwarts Legacy", options: ["Hogwarts Legacy", "Forspoken", "Final Fantasy", "The Witcher 3"] },
+            { desc: "محارب يقاتل وحوشاً مستوحاة من الأساطير الصينية", answer: "Black Myth: Wukong", options: ["Black Myth: Wukong", "Sifu", "Wo Long", "Naraka: Bladepoint"] },
+            { desc: "فريق من الجنود يقاتل كائنات فضائية تعاونياً", answer: "Helldivers 2", options: ["Helldivers 2", "Starship Troopers", "Deep Rock Galactic", "Returnal"] },
+            { desc: "روغلايك إغريقي حيث تحاول الهروب من العالم السفلي", answer: "Hades", options: ["Hades", "Dead Cells", "Returnal", "Disco Elysium"] },
+        ];
+
+        // ===== STATE =====
+        let currentFilter = 'all';
+        let xp = parseInt(localStorage.getItem('pz_xp') || '0');
+        let unlockedAchievements = JSON.parse(localStorage.getItem('pz_achievements') || '[]');
+        let visitedSections = JSON.parse(localStorage.getItem('pz_sections') || '[]');
+        let soundOn = true;
+        let reactionState = 'idle';
+        let reactionStart = 0;
+        let bestReaction = Infinity;
+        let reactionAttempts = 0;
+        let numberSecret = Math.floor(Math.random() * 100) + 1;
+        let numberAttempts = 0;
+        let clickCount = 0;
+        let clickActive = false;
+        let clickTimerVal = 10;
+        let clickInterval = null;
+        let bestClick = 0;
+        let quizCurrent = [];
+        let quizIndex = 0;
+        let quizScore = 0;
+        let memoryCards = [];
+        let memoryFlipped = [];
+        let memoryMatched = [];
+        let memoryMoves = 0;
+        let memoryLocked = false;
+        let funFactIndex = 0;
+
+        // ===== INIT =====
+        function init() {
+            lucide.createIcons();
+            updateXPDisplay();
+            renderGames();
+            renderAchievements();
+            renderNews();
+            initMemoryGame();
+            startCountdowns();
+            unlockAchievement('first_visit');
+            updateStreak();
+
+            // Particles
+            const canvas = document.getElementById('particles-bg');
+            const ctx = canvas.getContext('2d');
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            const particles = [];
+            for (let i = 0; i < 50; i++) {
+                particles.push({ x: Math.random() * canvas.width, y: Math.random() * canvas.height, r: Math.random() * 2 + 0.5, dx: (Math.random() - 0.5) * 0.5, dy: (Math.random() - 0.5) * 0.5, o: Math.random() * 0.3 + 0.1 });
+            }
+            function animateParticles() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                particles.forEach(p => {
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+                    ctx.fillStyle = `rgba(0, 212, 255, ${p.o})`;
+                    ctx.fill();
+                    p.x += p.dx; p.y += p.dy;
+                    if (p.x < 0 || p.x > canvas.width) p.dx *= -1;
+                    if (p.y < 0 || p.y > canvas.height) p.dy *= -1;
+                });
+                requestAnimationFrame(animateParticles);
+            }
+            animateParticles();
+            window.addEventListener('resize', () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; });
+        }
+
+        // ===== NAVIGATION =====
+        function showSection(name) {
+            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+            document.getElementById('section-' + name).classList.add('active');
+            document.querySelectorAll('.nav-link').forEach(n => n.classList.remove('active'));
+            document.querySelector(`[data-nav="${name}"]`)?.classList.add('active');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+
+            if (!visitedSections.includes(name)) {
+                visitedSections.push(name);
+                localStorage.setItem('pz_sections', JSON.stringify(visitedSections));
+                addXP(5);
+            }
+            if (name === 'games') unlockAchievement('game_browser');
+            if (name === 'news') unlockAchievement('news_reader');
+            if (visitedSections.length >= 5) unlockAchievement('all_sections');
+        }
+
+        function toggleMobileMenu() {
+            document.getElementById('mobile-menu').classList.toggle('hidden');
+        }
+
+        // ===== GAMES =====
+        function renderGames() {
+            const grid = document.getElementById('games-grid');
+            const search = document.getElementById('game-search')?.value?.toLowerCase() || '';
+            let filtered = gamesDB.filter(g => {
+                if (currentFilter !== 'all') {
+                    if (['ps4', 'ps5'].includes(currentFilter)) return g.platform === currentFilter;
+                    if (['action', 'rpg', 'adventure', 'sports', 'horror', 'racing'].includes(currentFilter)) return g.genre === currentFilter;
+                }
+                return true;
+            }).filter(g => g.name.toLowerCase().includes(search) || g.desc.includes(search));
+
+            grid.innerHTML = filtered.map(g => `
+                <div class="game-card bg-white/5 rounded-2xl overflow-hidden neon-border cursor-pointer" onclick="showGameToast('${g.name}')">
+                    <div class="relative aspect-[3/4]">
+                        <img src="https://picsum.photos/seed/${g.img}/300/400" class="w-full h-full object-cover">
+                        <div class="game-overlay absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent flex items-end p-4">
+                            <div>
+                                <div class="text-sm font-bold">${g.name}</div>
+                                <div class="text-xs text-gray-300 mt-1">${g.desc}</div>
+                            </div>
+                        </div>
+                        <div class="absolute top-2 left-2 flex gap-1">
+                            <span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${g.platform === 'ps5' ? 'bg-ps-light' : 'bg-gaming-purple'}">${g.platform.toUpperCase()}</span>
+                        </div>
+                        <div class="absolute top-2 right-2 bg-black/60 backdrop-blur-sm rounded-lg px-2 py-0.5 text-xs font-bold text-gaming-orange">⭐ ${g.rating}</div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function filterGames() { renderGames(); }
+
+        function setFilter(f) {
+            currentFilter = f;
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelector(`[data-filter="${f}"]`)?.classList.add('active');
+            renderGames();
+        }
+
+        function showGameToast(name) {
+            showToast(`🎮 ${name}`, 'لعبة رائعة! جربها على PlayStation', 'ps-blue');
+        }
+
+        function randomGame() {
+            const game = gamesDB[Math.floor(Math.random() * gamesDB.length)];
+            unlockAchievement('random_game');
+            const modal = document.getElementById('random-modal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            document.getElementById('random-game-result').innerHTML = `
+                <img src="https://picsum.photos/seed/${game.img}/200/280" class="w-32 h-44 object-cover rounded-xl mx-auto mb-4">
+                <h4 class="text-xl font-bold mb-1">${game.name}</h4>
+                <p class="text-sm text-gray-400 mb-2">${game.desc}</p>
+                <div class="flex items-center justify-center gap-2">
+                    <span class="text-xs font-bold px-2 py-0.5 rounded-full ${game.platform === 'ps5' ? 'bg-ps-light' : 'bg-gaming-purple'}">${game.platform.toUpperCase()}</span>
+                    <span class="text-xs text-gaming-orange">⭐ ${game.rating}</span>
+                </div>
+            `;
+        }
+
+        function closeRandomModal() {
+            const modal = document.getElementById('random-modal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        // ===== REACTION GAME =====
+        function reactionClick() {
+            const zone = document.getElementById('reaction-zone');
+            const text = document.getElementById('reaction-text');
+
+            if (reactionState === 'idle') {
+                reactionState = 'waiting';
+                zone.className = 'reaction-zone rounded-xl h-48 flex items-center justify-center bg-yellow-500/20 border-2 border-yellow-500/40 mb-4';
+                text.innerHTML = '<div class="text-2xl font-bold text-yellow-400">انتظر اللون الأخضر...</div><div class="text-sm text-gray-400 mt-1">لا تضغط الآن!</div>';
+                const delay = Math.random() * 4000 + 1500;
+                setTimeout(() => {
+                    if (reactionState === 'waiting') {
+                        reactionState = 'ready';
+                        reactionStart = Date.now();
+                        zone.className = 'reaction-zone rounded-xl h-48 flex items-center justify-center bg-green-500/30 border-2 border-green-500/50 mb-4';
+                        text.innerHTML = '<div class="text-4xl font-black text-green-400">اضغط الآن! 🎯</div>';
+                    }
+                }, delay);
+            } else if (reactionState === 'waiting') {
+                reactionState = 'idle';
+                zone.className = 'reaction-zone rounded-xl h-48 flex items-center justify-center bg-red-500/20 border-2 border-red-500/40 mb-4';
+                text.innerHTML = '<div class="text-2xl font-bold text-red-400">باكر! 😤</div><div class="text-sm text-gray-400 mt-1">اضغط للمحاولة مرة أخرى</div>';
+            } else if (reactionState === 'ready') {
+                const time = Date.now() - reactionStart;
+                reactionAttempts++;
+                if (time < bestReaction) bestReaction = time;
+                reactionState = 'idle';
+                zone.className = 'reaction-zone rounded-xl h-48 flex items-center justify-center bg-blue-500/20 border-2 border-blue-500/40 mb-4';
+                text.innerHTML = `<div class="text-4xl font-black text-gaming-neon">${time}ms</div><div class="text-sm text-gray-400 mt-2">${time < 200 ? 'خارق! 🤯' : time < 300 ? 'سريع جداً! ⚡' : time < 400 ? 'جيد! 👍' : 'حاول أسرع 💪'}</div><div class="text-xs text-gray-500 mt-1">اضغط للمحاولة مرة أخرى</div>`;
+                document.getElementById('best-reaction').textContent = bestReaction === Infinity ? '--' : bestReaction;
+                document.getElementById('reaction-attempts').textContent = reactionAttempts;
+                if (time < 300) unlockAchievement('reaction_5');
+                addXP(5);
+                spawnParticles(zone);
             }
         }
 
-        function tryConnect(seatNumber) {
-            const freqKey = freqInput.value.replace('.', '-');
-            const peerId = `room-${freqKey}-seat-${seatNumber}`;
+        // ===== QUIZ =====
+        function startQuiz() {
+            quizCurrent = [...quizQuestions].sort(() => Math.random() - 0.5).slice(0, 5);
+            quizIndex = 0;
+            quizScore = 0;
+            renderQuizQuestion();
+        }
 
-            peer = new Peer(peerId, { 
-                debug: 1,
-                config: {'iceServers': [{ 'urls': 'stun:stun.l.google.com:19302' }]}
-            });
+        function renderQuizQuestion() {
+            if (quizIndex >= quizCurrent.length) {
+                document.getElementById('quiz-desc').textContent = `انتهى التحدي! نتيجتك: ${quizScore}/${quizCurrent.length}`;
+                document.getElementById('quiz-options').innerHTML = '';
+                if (quizScore === quizCurrent.length) unlockAchievement('quiz_perfect');
+                addXP(quizScore * 10);
+                return;
+            }
+            const q = quizCurrent[quizIndex];
+            document.getElementById('quiz-num').textContent = quizIndex + 1;
+            document.getElementById('quiz-total').textContent = quizCurrent.length;
+            document.getElementById('quiz-total2').textContent = quizCurrent.length;
+            document.getElementById('quiz-desc').textContent = q.desc;
+            document.getElementById('quiz-score').textContent = quizScore;
 
-            peer.on('open', (id) => {
-                mySeat = seatNumber;
-                isConnected = true;
-                document.getElementById('statusText').innerText = "أنت في المقعد رقم " + seatNumber;
-                document.getElementById('connectText').innerText = "مغادرة القناة";
-                connectBtn.classList.replace('bg-slate-800', 'bg-red-900/30');
-                document.getElementById('activeList').classList.remove('hidden');
+            const shuffled = [...q.options].sort(() => Math.random() - 0.5);
+            document.getElementById('quiz-options').innerHTML = shuffled.map(opt => `
+                <button onclick="quizAnswer(this, '${opt}', '${q.answer}')" class="quiz-option w-full text-right px-4 py-3 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 text-sm font-medium">
+                    ${opt}
+                </button>
+            `).join('');
+        }
 
-                // بمجرد الدخول، اتصل بجميع المقاعد التي قبلك (من 1 إلى مقعدك-1)
-                for (let i = 1; i < mySeat; i++) {
-                    const targetId = `room-${freqKey}-seat-${i}`;
-                    const call = peer.call(targetId, myStream, { metadata: { name: myUsername } });
-                    if (call) handleCall(call);
-                }
-            });
+        function quizAnswer(btn, selected, correct) {
+            document.querySelectorAll('.quiz-option').forEach(b => b.onclick = null);
+            if (selected === correct) {
+                btn.classList.add('correct');
+                quizScore++;
+                addXP(5);
+            } else {
+                btn.classList.add('wrong');
+                document.querySelectorAll('.quiz-option').forEach(b => {
+                    if (b.textContent.trim() === correct) b.classList.add('correct');
+                });
+            }
+            document.getElementById('quiz-score').textContent = quizScore;
+            setTimeout(() => { quizIndex++; renderQuizQuestion(); }, 1200);
+        }
 
-            peer.on('call', (call) => {
-                call.answer(myStream);
-                handleCall(call);
-            });
+        // ===== MEMORY GAME =====
+        function initMemoryGame() {
+            const emojis = ['🎮', '🎯', '🎲', '🏆', '⭐', '🔥', '💎', '🎪'];
+            const pairs = [...emojis, ...emojis].sort(() => Math.random() - 0.5);
+            memoryCards = pairs;
+            memoryFlipped = [];
+            memoryMatched = [];
+            memoryMoves = 0;
+            memoryLocked = false;
+            document.getElementById('memory-moves').textContent = '0';
+            renderMemoryGrid();
+        }
 
-            peer.on('error', (err) => {
-                if (err.type === 'unavailable-id') {
-                    // إذا كان المقعد محجوزاً، جرب المقعد التالي
-                    peer.destroy();
-                    tryConnect(seatNumber + 1);
+        function renderMemoryGrid() {
+            const grid = document.getElementById('memory-grid');
+            grid.innerHTML = memoryCards.map((card, i) => `
+                <button onclick="flipCard(${i})" id="mem-${i}" class="aspect-square rounded-xl text-2xl font-bold flex items-center justify-center transition-all duration-300 ${memoryMatched.includes(i) ? 'bg-gaming-green/20 border-2 border-gaming-green/50' : memoryFlipped.includes(i) ? 'bg-gaming-purple/20 border-2 border-gaming-purple/50' : 'bg-white/10 border-2 border-white/20 hover:bg-white/15'}">
+                    ${memoryFlipped.includes(i) || memoryMatched.includes(i) ? card : '❓'}
+                </button>
+            `).join('');
+        }
+
+        function flipCard(index) {
+            if (memoryLocked || memoryFlipped.includes(index) || memoryMatched.includes(index)) return;
+            memoryFlipped.push(index);
+            renderMemoryGrid();
+
+            if (memoryFlipped.length === 2) {
+                memoryMoves++;
+                document.getElementById('memory-moves').textContent = memoryMoves;
+                memoryLocked = true;
+                const [a, b] = memoryFlipped;
+                if (memoryCards[a] === memoryCards[b]) {
+                    memoryMatched.push(a, b);
+                    memoryFlipped = [];
+                    memoryLocked = false;
+                    renderMemoryGrid();
+                    if (memoryMatched.length === memoryCards.length) {
+                        unlockAchievement('memory_win');
+                        addXP(20);
+                        showToast('🎉 أحسنت!', `أكملت اللعبة في ${memoryMoves} حركة!`, 'gaming-green');
+                    }
                 } else {
-                    console.error("Peer Error:", err);
+                    setTimeout(() => {
+                        memoryFlipped = [];
+                        memoryLocked = false;
+                        renderMemoryGrid();
+                    }, 800);
                 }
-            });
+            }
         }
 
-        function handleCall(call) {
-            call.on('stream', (stream) => {
-                if (!activeCalls[call.peer]) {
-                    const audio = document.createElement('audio');
-                    audio.id = 'aud-' + call.peer;
-                    audio.srcObject = stream;
-                    audio.autoplay = true;
-                    audioContainer.appendChild(audio);
-                    
-                    const remoteName = call.metadata?.name || "مستخدم متصل";
-                    activeCalls[call.peer] = { name: remoteName };
-                    renderList();
-                }
-            });
-            call.on('close', () => {
-                delete activeCalls[call.peer];
-                const aud = document.getElementById('aud-' + call.peer);
-                if (aud) aud.remove();
-                renderList();
-            });
+        // ===== NUMBER GAME =====
+        function checkNumber() {
+            const input = document.getElementById('number-guess');
+            const guess = parseInt(input.value);
+            if (isNaN(guess) || guess < 1 || guess > 100) return;
+            numberAttempts++;
+            document.getElementById('number-attempts').textContent = numberAttempts;
+
+            if (guess === numberSecret) {
+                document.getElementById('number-hint').textContent = '🎉';
+                document.getElementById('number-message').textContent = `صح! الرقم هو ${numberSecret} (${numberAttempts} محاولات)`;
+                unlockAchievement('number_found');
+                addXP(15);
+                spawnParticles(document.getElementById('number-hint'));
+            } else if (guess < numberSecret) {
+                document.getElementById('number-hint').textContent = '⬆️';
+                document.getElementById('number-message').textContent = 'أعلى! الرقم أكبر';
+            } else {
+                document.getElementById('number-hint').textContent = '⬇️';
+                document.getElementById('number-message').textContent = 'أقل! الرقم أصغر';
+            }
+            input.value = '';
         }
 
-        function renderList() {
-            peersContainer.innerHTML = '';
-            const ids = Object.keys(activeCalls);
-            document.getElementById('userCount').innerText = `${ids.length} متصل`;
-            
-            ids.forEach(id => {
-                const user = activeCalls[id];
-                const div = document.createElement('div');
-                div.className = "flex items-center justify-between bg-slate-900/50 p-3 rounded-xl border border-white/5";
-                div.innerHTML = `
-                    <div class="flex items-center gap-3">
-                        <div class="w-8 h-8 rounded-full bg-cyan-500/20 flex items-center justify-center text-cyan-400">
-                            <i class="fas fa-microphone text-xs"></i>
+        function resetNumberGame() {
+            numberSecret = Math.floor(Math.random() * 100) + 1;
+            numberAttempts = 0;
+            document.getElementById('number-attempts').textContent = '0';
+            document.getElementById('number-hint').textContent = '🤔';
+            document.getElementById('number-message').textContent = 'خمّن رقماً بين 1 و 100';
+        }
+
+        // ===== CLICK TEST =====
+        function clickTest() {
+            if (!clickActive) {
+                clickActive = true;
+                clickCount = 0;
+                clickTimerVal = 10;
+                document.getElementById('click-count').textContent = '0';
+                document.getElementById('click-timer').textContent = '10 ثواني متبقية!';
+                clickInterval = setInterval(() => {
+                    clickTimerVal--;
+                    document.getElementById('click-timer').textContent = `${clickTimerVal} ثواني متبقية!`;
+                    if (clickTimerVal <= 0) {
+                        clearInterval(clickInterval);
+                        clickActive = false;
+                        document.getElementById('click-timer').textContent = `انتهى! ${clickCount} نقرة في 10 ثواني`;
+                        if (clickCount > bestClick) {
+                            bestClick = clickCount;
+                            document.getElementById('best-click').textContent = bestClick;
+                        }
+                        if (clickCount >= 50) unlockAchievement('click_50');
+                        addXP(Math.floor(clickCount / 5));
+                    }
+                }, 1000);
+            } else {
+                clickCount++;
+                document.getElementById('click-count').textContent = clickCount;
+            }
+        }
+
+        // ===== MOOD =====
+        function selectMood(mood) {
+            document.querySelectorAll('.mood-card').forEach(c => c.classList.remove('selected'));
+            event.currentTarget.classList.add('selected');
+            unlockAchievement('mood_picker');
+            addXP(5);
+
+            const moodMap = {
+                action: { emoji: '😤', title: 'ألعاب للأكشن!', games: gamesDB.filter(g => g.mood.includes('action')).slice(0, 8) },
+                relax: { emoji: '😌', title: 'ألعاب للاسترخاء', games: gamesDB.filter(g => g.mood.includes('relax')).slice(0, 8) },
+                scared: { emoji: '😨', title: 'ألعاب مرعبة!', games: gamesDB.filter(g => g.mood.includes('scared')).slice(0, 8) },
+                social: { emoji: '🤝', title: 'ألعاب مع أصدقاء!', games: gamesDB.filter(g => g.mood.includes('social')).slice(0, 8) },
+                think: { emoji: '🤔', title: 'ألعاب تحتاج تفكير', games: gamesDB.filter(g => g.mood.includes('think')).slice(0, 8) },
+                speed: { emoji: '🏎️', title: 'ألعاب سريعة!', games: gamesDB.filter(g => g.mood.includes('speed')).slice(0, 8) },
+                story: { emoji: '📖', title: 'ألعاب بقصص ملحمية', games: gamesDB.filter(g => g.mood.includes('story')).slice(0, 8) },
+                bored: { emoji: '🥱', title: 'أي شيء ينفع!', games: [...gamesDB].sort(() => Math.random() - 0.5).slice(0, 8) },
+            };
+
+            const m = moodMap[mood];
+            document.getElementById('mood-results').classList.remove('hidden');
+            document.getElementById('mood-emoji').textContent = m.emoji;
+            document.getElementById('mood-title').textContent = m.title;
+            document.getElementById('mood-games').innerHTML = m.games.map(g => `
+                <div class="game-card bg-white/5 rounded-2xl overflow-hidden neon-border">
+                    <div class="relative aspect-[3/4]">
+                        <img src="https://picsum.photos/seed/${g.img}/300/400" class="w-full h-full object-cover">
+                        <div class="game-overlay absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent flex items-end p-3">
+                            <div>
+                                <div class="text-sm font-bold">${g.name}</div>
+                                <div class="text-xs text-gray-300 mt-1">${g.desc}</div>
+                            </div>
                         </div>
-                        <span class="text-xs font-bold">${user.name}</span>
+                        <div class="absolute top-2 right-2 bg-black/60 backdrop-blur-sm rounded-lg px-2 py-0.5 text-xs font-bold text-gaming-orange">⭐ ${g.rating}</div>
                     </div>
-                    <div class="flex gap-1">
-                        <div class="w-1 h-3 bg-cyan-500 rounded-full animate-bounce" style="animation-delay: 0.1s"></div>
-                        <div class="w-1 h-3 bg-cyan-400 rounded-full animate-bounce" style="animation-delay: 0.2s"></div>
+                </div>
+            `).join('');
+        }
+
+        // ===== ACHIEVEMENTS =====
+        function renderAchievements() {
+            const grid = document.getElementById('achievements-grid');
+            grid.innerHTML = achievementsDB.map(a => {
+                const unlocked = unlockedAchievements.includes(a.id);
+                return `
+                    <div class="achievement ${unlocked ? 'unlocked' : 'locked'} bg-white/5 border ${unlocked ? 'border-gaming-green/30' : 'border-white/10'} rounded-2xl p-5 flex items-center gap-4">
+                        <div class="text-4xl">${unlocked ? a.icon : '🔒'}</div>
+                        <div class="flex-1">
+                            <div class="font-bold ${unlocked ? '' : 'text-gray-500'}">${a.name}</div>
+                            <div class="text-xs ${unlocked ? 'text-gray-400' : 'text-gray-600'}">${a.desc}</div>
+                        </div>
+                        <div class="text-sm font-bold ${unlocked ? 'text-gaming-green' : 'text-gray-600'}">+${a.xp} XP</div>
                     </div>
                 `;
-                peersContainer.appendChild(div);
-            });
+            }).join('');
         }
 
-        function stopSystem() {
-            if (peer) peer.destroy();
-            if (myStream) myStream.getTracks().forEach(t => t.stop());
-            isConnected = false;
-            activeCalls = {};
-            document.getElementById('connectText').innerText = "دخول القناة";
-            connectBtn.classList.replace('bg-red-900/30', 'bg-slate-800');
-            document.getElementById('statusText').innerText = "جاهز للبث";
-            document.getElementById('activeList').classList.add('hidden');
-            peersContainer.innerHTML = '';
-            audioContainer.innerHTML = '';
+        function unlockAchievement(id) {
+            if (unlockedAchievements.includes(id)) return;
+            unlockedAchievements.push(id);
+            localStorage.setItem('pz_achievements', JSON.stringify(unlockedAchievements));
+            const ach = achievementsDB.find(a => a.id === id);
+            if (ach) {
+                addXP(ach.xp);
+                showToast(`🏆 إنجاز جديد!`, `${ach.icon} ${ach.name} (+${ach.xp} XP)`, 'gaming-green');
+            }
+            renderAchievements();
         }
 
-        connectBtn.onclick = () => {
-            if (!isConnected) startSystem();
-            else stopSystem();
-        };
+        // ===== XP & LEVEL =====
+        function addXP(amount) {
+            xp += amount;
+            localStorage.setItem('pz_xp', xp);
+            updateXPDisplay();
+        }
+
+        function updateXPDisplay() {
+            document.getElementById('xp-counter').textContent = xp;
+            document.getElementById('stat-xp').textContent = xp;
+            document.getElementById('stat-achievements').textContent = unlockedAchievements.length;
+
+            const level = Math.floor(xp / 100) + 1;
+            const currentLevelXP = xp % 100;
+            document.getElementById('level-num').textContent = level;
+            document.getElementById('level-text').textContent = level;
+            document.getElementById('current-xp').textContent = currentLevelXP;
+            document.getElementById('next-level-xp').textContent = '100';
+            document.getElementById('xp-bar').style.width = currentLevelXP + '%';
+
+            const titles = ['لاعب مبتدئ', 'لاعب هاوي', 'لاعب نشيط', 'محترف', 'خبير', 'أسطورة', 'إله الألعاب'];
+            document.querySelector('#section-achievements .text-xs.text-gray-400').textContent = titles[Math.min(level - 1, titles.length - 1)];
+        }
+
+        // ===== NEWS =====
+        function renderNews() {
+            document.getElementById('news-grid').innerHTML = newsData.map(n => `
+                <div class="bg-white/5 rounded-2xl overflow-hidden neon-border card-glow transition-all duration-300 cursor-pointer">
+                    <img src="https://picsum.photos/seed/${n.img}/400/200" class="w-full h-44 object-cover">
+                    <div class="p-5">
+                        <div class="flex items-center gap-2 mb-2">
+                            <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-ps-light/30 text-gaming-neon">${n.cat}</span>
+                            <span class="text-[10px] text-gray-500">${n.time}</span>
+                        </div>
+                        <h3 class="font-bold text-lg mb-2 leading-tight">${n.title}</h3>
+                        <p class="text-sm text-gray-400">${n.desc}</p>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // ===== COUNTDOWNS =====
+        function startCountdowns() {
+            const targets = {
+                'countdown-gta6': new Date('2025-10-27'),
+                'countdown-ds2': new Date('2025-06-26'),
+                'countdown-ghost2': new Date('2025-08-01'),
+            };
+            function update() {
+                const now = new Date();
+                Object.entries(targets).forEach(([id, target]) => {
+                    const diff = target - now;
+                    if (diff <= 0) {
+                        const el = document.getElementById(id);
+                        if (el) el.querySelectorAll('.font-bold').forEach(e => e.textContent = '🎉');
+                        return;
+                    }
+                    const d = Math.floor(diff / 86400000);
+                    const h = Math.floor((diff % 86400000) / 3600000);
+                    const m = Math.floor((diff % 3600000) / 60000);
+                    const s = Math.floor((diff % 60000) / 1000);
+                    const el = document.getElementById(id);
+                    if (el) {
+                        const cells = el.querySelectorAll('.font-bold');
+                        cells[0].textContent = d;
+                        cells[1].textContent = h;
+                        cells[2].textContent = m;
+                        cells[3].textContent = s;
+                    }
+                });
+            }
+            update();
+            setInterval(update, 1000);
+        }
+
+        // ===== FUN FACTS =====
+        function nextFunFact() {
+            funFactIndex = (funFactIndex + 1) % funFacts.length;
+            const el = document.getElementById('fun-fact');
+            el.style.animation = 'none';
+            el.offsetHeight;
+            el.style.animation = 'slide-up 0.4s ease-out';
+            el.textContent = funFacts[funFactIndex];
+        }
+        setInterval(nextFunFact, 8000);
+
+        // ===== STREAK =====
+        function updateStreak() {
+            const today = new Date().toDateString();
+            const lastVisit = localStorage.getItem('pz_lastVisit');
+            let streak = parseInt(localStorage.getItem('pz_streak') || '0');
+
+            if (lastVisit !== today) {
+                const yesterday = new Date(Date.now() - 86400000).toDateString();
+                if (lastVisit === yesterday) {
+                    streak++;
+                } else if (lastVisit !== today) {
+                    streak = 1;
+                }
+                localStorage.setItem('pz_streak', streak);
+                localStorage.setItem('pz_lastVisit', today);
+            }
+            document.getElementById('stat-streak').textContent = streak;
+            if (streak >= 3) unlockAchievement('streak_3');
+        }
+
+        // ===== TOAST =====
+        function showToast(title, msg, color = 'ps-blue') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast bg-[#12122a] border border-${color}/30 rounded-xl px-5 py-3 shadow-2xl max-w-sm`;
+            toast.innerHTML = `<div class="font-bold text-sm">${title}</div><div class="text-xs text-gray-400">${msg}</div>`;
+            container.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
+        }
+
+        // ===== PARTICLES =====
+        function spawnParticles(el) {
+            const rect = el.getBoundingClientRect();
+            const x = rect.left + rect.width / 2;
+            const y = rect.top + rect.height / 2;
+            const colors = ['#00d4ff', '#8b5cf6', '#ec4899', '#10b981', '#f59e0b'];
+            for (let i = 0; i < 15; i++) {
+                const p = document.createElement('div');
+                p.className = 'particle';
+                p.style.left = x + 'px';
+                p.style.top = y + 'px';
+                p.style.width = Math.random() * 8 + 4 + 'px';
+                p.style.height = p.style.width;
+                p.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                p.style.transform = `translate(${(Math.random() - 0.5) * 200}px, ${-Math.random() * 200}px)`;
+                document.body.appendChild(p);
+                setTimeout(() => p.remove(), 1500);
+            }
+        }
+
+        // ===== SOUND =====
+        function toggleSound() {
+            soundOn = !soundOn;
+            const btn = document.getElementById('sound-btn');
+            btn.innerHTML = soundOn ? '<i data-lucide="volume-2" class="w-5 h-5"></i>' : '<i data-lucide="volume-x" class="w-5 h-5"></i>';
+            lucide.createIcons();
+        }
+
+        // ===== INIT =====
+        document.addEventListener('DOMContentLoaded', init);
     </script>
 </body>
 </html>
